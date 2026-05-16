@@ -1,5 +1,7 @@
 # Renku Cinema Analyze
 
+![Renku Cinema Analyze visual language preview](visual-language.gif)
+
 Renku Cinema Analyze is an agent skill/plugin for turning a FilmGrab movie page into a cinematographer-focused visual-language study.
 
 It downloads a capped set of FilmGrab stills, uses FilmGrab's own smaller image variants for vision analysis, guides the agent through a structured visual reading, validates cited stills against the downloaded manifest, and renders a browser report with switchable visual styles.
@@ -43,21 +45,54 @@ $renku-cinema-analyze
 
 ### If You Use Claude Code
 
-Add this GitHub repository as a Claude Code plugin marketplace from inside Claude Code:
+Claude Code ships in two surfaces with different plugin install flows: the terminal CLI uses slash commands, the Desktop app (macOS/Windows) uses a GUI submenu.
 
-```text
-/plugin marketplace add GoRenku/cinema-analyze
-```
+#### Claude Code CLI (terminal)
 
-Then install the plugin from that marketplace:
+1. Open a project with `claude` in the terminal.
+2. In the chat input, add this GitHub repository as a plugin marketplace:
 
-```text
-/plugin install cinema-analyze@cinema-analyze
-```
+   ```text
+   /plugin marketplace add GoRenku/cinema-analyze
+   ```
 
-The plugin becomes active in the current session immediately after install. If components do not appear, start a new Claude Code session.
+3. Install the plugin from that marketplace:
 
-These slash commands work the same in the Claude Code CLI, the desktop app, and the IDE extensions.
+   ```text
+   /plugin install cinema-analyze@cinema-analyze
+   ```
+
+4. Activate the newly installed plugin in the current session:
+
+   ```text
+   /reload-plugins
+   ```
+
+You can also run `/plugin` on its own to open the interactive plugin manager (Discover, Installed, Marketplaces, Errors tabs) and add the marketplace or install the plugin from there using arrow keys and Enter.
+
+If `/plugin` is not recognized in the CLI, your Claude Code is too old. Update it (`brew upgrade claude-code`, or `npm install -g @anthropic-ai/claude-code@latest`, or re-run the native installer), restart, and try again.
+
+#### Claude Code Desktop app (macOS/Windows)
+
+The Desktop app does not expose the `/plugin marketplace add` slash command. Add the marketplace through the GUI, then install the plugin from the browser.
+
+1. Open the Claude Desktop app.
+2. Click the **Cowork** tab in the mode selector at the top of the app.
+3. In the left sidebar, click **Customize**.
+4. Click **Browse plugins**.
+5. Select **Personal**.
+6. Click the **+** button and select **Add marketplace from GitHub**.
+7. Enter the repository URL:
+
+   ```text
+   https://github.com/GoRenku/cinema-analyze
+   ```
+
+8. Once the marketplace is added, find `cinema-analyze` in the plugin list and install it.
+
+After installing, switch to the **Code** tab and start a Local session. The plugin's skills become available to the agent. Use **+** → **Plugins** → **Manage plugins** in a Code session to enable, disable, or uninstall it later.
+
+Plugins are not available for Desktop **Remote** sessions; use Local or SSH sessions.
 
 Then ask Claude Code to use the Renku Cinema Analyze skill with a FilmGrab movie URL. Claude Code plugin usage is prompt-driven, so you can say:
 
