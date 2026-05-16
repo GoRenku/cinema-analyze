@@ -55,7 +55,9 @@ Then install the plugin from that marketplace:
 /plugin install cinema-analyze@cinema-analyze
 ```
 
-Run `/reload-plugins` after installation, or restart Claude Code if Claude Code asks you to reload plugins.
+The plugin becomes active in the current session immediately after install. If components do not appear, start a new Claude Code session.
+
+These slash commands work the same in the Claude Code CLI, the desktop app, and the IDE extensions.
 
 Then ask Claude Code to use the Renku Cinema Analyze skill with a FilmGrab movie URL. Claude Code plugin usage is prompt-driven, so you can say:
 
@@ -113,13 +115,19 @@ The skill intentionally uses a direct FilmGrab page link instead of automaticall
 
 The skill renders a static report into each movie folder. Ask the agent to open or preview the generated report, and it will use the shared local preview server on one stable port: `127.0.0.1:8765`.
 
-For manual control, the deterministic server script is:
+The home-page picker needs a known base analysis folder. The skill passes this folder when it starts the preview server. Advanced users can do the same with the helper script:
 
 ```bash
-skills/renku-cinema-analyze/bin/server start
+skills/renku-cinema-analyze/bin/server start --base-dir ~/cinema-analyses
 ```
 
-Then open a generated movie folder through the `dir` query parameter:
+Open the server home page to pick from the analyses in your base folder:
+
+```text
+http://127.0.0.1:8765/
+```
+
+Open a generated movie folder through the `dir` query parameter:
 
 ```text
 http://127.0.0.1:8765/?dir=/Users/you/cinema-analyses/promising-young-woman
@@ -139,12 +147,6 @@ When you are finished looking at reports, ask the agent to stop the shared previ
 
 ```text
 Stop the Renku Cinema Analyze preview server.
-```
-
-For manual control:
-
-```bash
-skills/renku-cinema-analyze/bin/server stop
 ```
 
 This prevents a leftover local server from continuing to run in the background.
@@ -199,19 +201,6 @@ http://127.0.0.1:8765/?dir=/path/to/report&style=dossier
 ```
 
 The top bar also includes a style switcher.
-
-## Preview Server Script
-
-Most users should let Codex or Claude Code run the workflow. If you want to manage the preview server yourself, use the smart lifecycle script:
-
-```bash
-skills/renku-cinema-analyze/bin/server start
-skills/renku-cinema-analyze/bin/server status
-skills/renku-cinema-analyze/bin/server restart
-skills/renku-cinema-analyze/bin/server stop
-```
-
-The script checks whether the server is already healthy, removes stale PID state, and refuses to start if another process owns the port. The preview server uses the stable local address: `http://127.0.0.1:8765/`.
 
 ## Thanks And Attribution
 
@@ -306,6 +295,6 @@ The marketplace files tell Codex and Claude Code where the plugin lives. The plu
 
 - Generated movie folders are temporary scratch output. Keep them in your base analysis folder rather than in this plugin repository.
 - The preview server uses one well-known local port: `127.0.0.1:8765`.
-- The movie picker in the report lists sibling folders that contain `analysis.json`.
+- The server home page opens the movie picker only when the preview server was started with a base analysis folder. With a selected report, the picker lists sibling folders that contain `analysis.json`.
 - The skill avoids inventing credits. If director, cinematographer, or year cannot be found, the report should use `null`.
 - The `Inspired by` section is visual lineage, not confirmed production history unless a source explicitly confirms it.
