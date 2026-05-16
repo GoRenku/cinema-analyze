@@ -1,6 +1,6 @@
 # Renku Cinema Analyze
 
-![Renku Cinema Analyze visual language preview](visual-language.gif)
+![Renku Cinema Analyze visual language preview](analysis-sample.gif)
 
 Renku Cinema Analyze is an agent skill/plugin for turning a FilmGrab movie page into a cinematographer-focused visual-language study.
 
