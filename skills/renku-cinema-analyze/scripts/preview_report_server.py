@@ -10,6 +10,7 @@ import signal
 import socket
 import sys
 import tempfile
+import time
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -90,6 +91,31 @@ def remove_pid() -> None:
             PID_FILE.unlink()
     except FileNotFoundError:
         pass
+
+
+def daemonize(log_file: Path) -> None:
+    """Detach the server so wrapper scripts can return while the preview stays alive."""
+    first_pid = os.fork()
+    if first_pid > 0:
+        os._exit(0)
+
+    os.setsid()
+
+    second_pid = os.fork()
+    if second_pid > 0:
+        os._exit(0)
+
+    os.chdir("/")
+    os.umask(0o022)
+    sys.stdin.flush()
+    sys.stdout.flush()
+    sys.stderr.flush()
+
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(os.devnull, "rb", buffering=0) as stdin, open(log_file, "ab", buffering=0) as log:
+        os.dup2(stdin.fileno(), sys.stdin.fileno())
+        os.dup2(log.fileno(), sys.stdout.fileno())
+        os.dup2(log.fileno(), sys.stderr.fileno())
 
 
 def stop_server() -> int:
@@ -272,6 +298,8 @@ def main() -> int:
     parser.add_argument("--host", default=DEFAULT_HOST)
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     parser.add_argument("--base-dir", help="Base folder for the home-page movie picker")
+    parser.add_argument("--daemon", action="store_true", help="Detach and keep serving after the wrapper exits")
+    parser.add_argument("--log-file", default=str(Path(tempfile.gettempdir()) / "renku-cinema-analyze-preview.log"))
     parser.add_argument("--stop", action="store_true", help="Stop the preview server using its pid file")
     parser.add_argument("--status", action="store_true", help="Report whether the preview server is running")
     args = parser.parse_args()
@@ -280,6 +308,9 @@ def main() -> int:
         return stop_server()
     if args.status:
         return status()
+    if args.daemon:
+        daemonize(Path(args.log_file).expanduser())
+        print(f"\n--- Renku Cinema Analyze preview server started at {time.strftime('%Y-%m-%d %H:%M:%S')} ---", flush=True)
     return serve(args.host, args.port, Path(args.base_dir).expanduser() if args.base_dir else None)
 
 

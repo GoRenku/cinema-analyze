@@ -130,7 +130,7 @@ start() {
     return 1
   fi
 
-  nohup "$PYTHON_BIN" "$SERVER_PY" --host "$HOST" --port "$PORT" "$@" >"$LOG_FILE" 2>&1 &
+  "$PYTHON_BIN" "$SERVER_PY" --host "$HOST" --port "$PORT" --daemon --log-file "$LOG_FILE" "$@"
 
   if wait_for_health; then
     status

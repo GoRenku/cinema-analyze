@@ -1,6 +1,6 @@
 ---
 name: renku-cinema-analyze
-description: Analyze a film-grab.com movie page into a cinematographer-focused visual language study. Use when a user gives a FilmGrab film URL and wants still extraction, capped full-size and smaller analysis image downloads, structured JSON analysis, or a browser-ready HTML/JavaScript report about a film's color, grading, composition, lighting, texture, and visual principles.
+description: Analyze a film-grab.com movie page into a cinematographer-focused visual language study. Use when a user gives a FilmGrab film URL and wants still extraction, capped small analysis image downloads, structured JSON analysis, or a browser-ready HTML/JavaScript report about a film's color, grading, composition, lighting, texture, and visual principles.
 ---
 
 # Renku Cinema Analyze
@@ -17,7 +17,7 @@ Use this skill to turn one FilmGrab movie URL into a reusable visual-language re
 python3 <skill>/scripts/prepare_filmgrab_stills.py "<film-grab-url>" --max-images 30
 ```
 
-This creates one movie-specific folder in the current working directory, then extracts direct still URLs, downloads full-size images, downloads smaller FilmGrab-provided `srcset` variants for analysis, and writes `manifest.json`.
+This creates one movie-specific folder in the current working directory, then extracts direct still URLs, downloads only smaller FilmGrab-provided `srcset` variants for analysis, and writes `manifest.json`. The manifest keeps full-size FilmGrab URLs as metadata for citation, but the script must not download full-size images.
 
 Use the printed output folder as `<work-dir>` for every later step. Keep all files for this movie inside that one folder:
 
@@ -25,16 +25,15 @@ Use the printed output folder as `<work-dir>` for every later step. Keep all fil
 <work-dir>/
   manifest.json
   analysis.json
-  full/
   analysis/
   report/
 ```
 
 Only pass `--output "<work-dir>"` when the user explicitly wants a custom folder name.
 
-2. Analyze only the smaller copies in `<work-dir>/analysis/`, not the full-size downloads. Use up to 30 stills. Study the stills as a system, not as isolated pretty frames.
+2. Analyze only the smaller copies in `<work-dir>/analysis/`. Analyze every still downloaded into the analysis folder; do not stop after reviewing only a few representative images. Study the complete downloaded set as a system, not as isolated pretty frames.
 
-3. Write `analysis.json` matching the schema below. For every claim that cites images, choose stills that visibly demonstrate that exact point. Never use a random still just to fill a slot.
+3. Write a thorough `analysis.json` matching the schema below. Cover the film's visual language in depth across color, grading, composition, lighting, texture, visual lineage, and practical cinematography principles. For every claim that cites images, choose stills that visibly demonstrate that exact point. Never use a random still just to fill a slot.
 
 4. Validate the JSON against the manifest:
 
@@ -54,6 +53,8 @@ Preview reports through the shared Renku Cinema Analyze preview server on the we
 <skill>/bin/server start --base-dir <analysis-base-folder>
 ```
 
+Always use the bundled server lifecycle scripts for preview server management: `<skill>/bin/server start`, `<skill>/bin/server status`, `<skill>/bin/server restart`, and `<skill>/bin/server stop` when shutdown is explicitly requested. The compatibility wrappers `<skill>/bin/preview-server` and `<skill>/bin/stop-preview-server` are also allowed. Do not manually run `scripts/preview_report_server.py`, `python -m http.server`, `nohup`, or a custom ad hoc server for normal report preview operations.
+
 Then open the report by passing the analysis folder in the URL:
 
 ```text
@@ -72,34 +73,30 @@ For example:
 http://127.0.0.1:8765/?dir=/Users/example/project/movie-title
 ```
 
-The renderer prints the exact preview URL after rendering.
+The renderer prints the exact preview URL after rendering. Keep that preview URL and include it in the successful completion response so the user can open the report directly.
 
 The shared preview also exposes a movie picker. On the server home page it lists analysis folders under the explicit server base folder. From a selected report, it lists sibling folders in the same parent directory. Any folder with an `analysis.json` file appears in the modal opened from the top-bar grid icon.
 
-Shut the shared preview server down when it is no longer needed:
+Do not stop the shared preview server at the end of a successful run. Leave it running so the user can view the report after completion. Only stop the server when the user explicitly asks you to stop it, or when you must restart it to clear a stale or unhealthy port state.
 
-```bash
-<skill>/bin/server stop
-```
-
-6. Sanity-check the rendered report. Confirm that the page loads the film title, expected sections, stills, and no obvious loading error. If browser access to localhost is blocked, use `curl "http://127.0.0.1:8765/analysis.json?dir=<absolute-work-dir>"` to confirm the preview server is serving the rendered JSON, then report the browser limitation clearly.
+6. Sanity-check the rendered report. Confirm that the page loads the film title, expected sections, stills, and no obvious loading error. If browser access to localhost is blocked, use `curl "http://127.0.0.1:8765/analysis.json?dir=<absolute-work-dir>"` to confirm the preview server is serving the rendered JSON, then report the browser limitation clearly. In the final response, include the exact preview URL, the `analysis.json` path, and a brief note that the preview server was left running.
 
 ## Common Hiccups
 
-- The still extractor can occasionally capture non-film page assets such as site icons, logos, ads, or tiny thumbnails. Exclude those from `sourceStills`, hero stills, observations, and all cited examples. Keep them in `manifest.json` if the script produced them, but do not analyze them as film frames.
+- The still extractor should only keep FilmGrab `/photo-gallery/` movie stills. If non-film page assets such as site icons, logos, ads, or tiny thumbnails appear, fix the extractor rather than analyzing them.
 - `fullUrl` values and all cited FilmGrab still URLs must point to the full-size image, never the `/photo-gallery/thumb/` URL. The prepare script canonicalizes thumbnail URLs by removing `/thumb/`; if any thumb URL remains in `analysis.json`, fix it before validation.
 - Network downloads may require approval in sandboxed environments. If fetching FilmGrab fails with DNS, host resolution, or connection errors, retry the same prepare command with the needed network permission instead of changing the workflow. The prepare script should not create the default output folder until after FilmGrab image URLs have been fetched successfully; if an older failed run left an empty default folder behind, the script should reuse it rather than creating a `-2` suffix.
-- Use the shared preview server on `127.0.0.1:8765`; do not create a new per-report static server on a random port. Pass the analysis folder through the `dir` query parameter instead.
-- If the preview server is already running, reuse it. Use `<skill>/bin/server status` to check it, `<skill>/bin/server start --base-dir <analysis-base-folder>` to start it, `<skill>/bin/server stop` to stop it, and `<skill>/bin/server restart --base-dir <analysis-base-folder>` if the port state looks stale.
+- Use the shared preview server on `127.0.0.1:8765`; do not create a new per-report static server on a random port. Pass the analysis folder through the `dir` query parameter instead. Manage this server only through the bundled `bin/server` script or its compatibility wrappers.
+- If the preview server is already running, reuse it. Use `<skill>/bin/server status` to check it, `<skill>/bin/server start --base-dir <analysis-base-folder>` to start it, and `<skill>/bin/server restart --base-dir <analysis-base-folder>` if the port state looks stale. Do not run `<skill>/bin/server stop` after a successful report unless the user explicitly asks for shutdown.
 - Browser preview is useful but not the source of truth. Validation against `manifest.json` and successful rendering of `report/index.html` plus `report/analysis.json` are required even if browser preview fails.
 
 ## Analysis Rules
 
 - Write for working cinematographers: concrete, visual, and useful. Prefer phrases that describe repeatable choices a DP could test.
 - Create one self-contained folder per movie in the current working directory. Do not scatter images, manifests, JSON, or rendered HTML across separate project locations.
-- Ground every section in the actual FilmGrab stills. If an observation says "low frontal fill isolates faces," its cited stills must show that lighting behavior.
+- Ground every section in the actual FilmGrab stills. Inspect every downloaded analysis image before writing `analysis.json`. If an observation says "low frontal fill isolates faces," its cited stills must show that lighting behavior.
 - Use the smaller analysis images for AI vision. Use the full URLs in JSON fields so users can inspect the source stills.
-- Cap the study at about 30 stills. If the page has more, sample across the whole film rather than taking only the opening run.
+- The downloader may cap the working set, usually around 30 stills. Once the stills are downloaded, analyze all of them. If the FilmGrab page has more stills than the cap, sample across the whole film during download rather than taking only the opening run.
 - Do not invent credits. If the FilmGrab page or obvious surrounding text does not provide director/cinematographer/year, set the field to `null`.
 - Avoid generic film-school labels unless you explain what they do in this specific movie.
 - Treat "Inspired By" as visual lineage, not verified production history. Unless a source explicitly confirms influence, use cautious language such as "potentially echoes," "shares a strategy with," or "sits near." Never state that a filmmaker was inspired by another film, director, or cinematographer as fact without a source.
@@ -205,7 +202,7 @@ When filling `inspiredBy`:
 
 ## Bundled Resources
 
-- `scripts/prepare_filmgrab_stills.py`: extract still URLs, download full images plus smaller FilmGrab `srcset` analysis copies, and write a manifest.
+- `scripts/prepare_filmgrab_stills.py`: extract still URLs, download only smaller FilmGrab analysis copies, and write a manifest with full-size source URLs as metadata.
 - `scripts/validate_analysis_json.py`: validate schema basics and verify cited still URLs come from the manifest.
 - `scripts/render_report.py`: create a report folder from the stable viewer template and `analysis.json`.
 - `scripts/preview_report_server.py`: serve the reusable viewer on `127.0.0.1:8765`, load any report with `?dir=<work-dir>`, and stop the server with `--stop`.

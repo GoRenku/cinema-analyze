@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Extract FilmGrab stills and download full plus analysis-sized copies."""
+"""Extract FilmGrab stills and download analysis-sized copies."""
 
 from __future__ import annotations
 
 import argparse
 import dataclasses
-import hashlib
 import html.parser
 import json
 import mimetypes
@@ -69,6 +68,13 @@ def is_image_url(url: str) -> bool:
     return path.endswith(IMAGE_EXTENSIONS)
 
 
+def encode_url_for_request(url: str) -> str:
+    parsed = urllib.parse.urlsplit(url)
+    path = urllib.parse.quote(urllib.parse.unquote(parsed.path), safe="/%")
+    query = urllib.parse.quote(urllib.parse.unquote(parsed.query), safe="=&?/:+,%")
+    return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, path, query, parsed.fragment))
+
+
 def canonical_url(url: str) -> str:
     parsed = urllib.parse.urlparse(url)
     return urllib.parse.urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
@@ -94,7 +100,7 @@ def still_group_key(url: str) -> str:
 
 
 def request_url(url: str) -> bytes:
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    req = urllib.request.Request(encode_url_for_request(url), headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(req, timeout=45) as response:
         return response.read()
 
@@ -103,7 +109,8 @@ def is_filmgrab_still_url(url: str) -> bool:
     parsed = urllib.parse.urlparse(url)
     if "film-grab.com" not in parsed.netloc.lower():
         return False
-    return "/wp-content/uploads/" in parsed.path.lower()
+    path = parsed.path.lower()
+    return "/wp-content/uploads/photo-gallery/" in path
 
 
 def extract_image_variants(page_url: str) -> list[ImageVariant]:
@@ -141,6 +148,13 @@ def choose_full_variant(variants: list[ImageVariant]) -> ImageVariant:
 def choose_analysis_variant(variants: list[ImageVariant], max_edge: int) -> ImageVariant:
     sized = [variant for variant in variants if variant.width]
     if not sized:
+        thumbnails = [
+            variant
+            for variant in variants
+            if "/wp-content/uploads/photo-gallery/thumb/" in urllib.parse.urlparse(variant.url).path.lower()
+        ]
+        if thumbnails:
+            return thumbnails[-1]
         return choose_full_variant(variants)
     within_limit = [variant for variant in sized if variant.width and variant.width <= max_edge]
     if within_limit:
@@ -246,9 +260,7 @@ def main() -> int:
         return 1
 
     out_dir = Path(args.output) if args.output else default_output_dir(args.url)
-    full_dir = out_dir / "full"
     analysis_dir = out_dir / "analysis"
-    full_dir.mkdir(parents=True, exist_ok=True)
     analysis_dir.mkdir(parents=True, exist_ok=True)
 
     stills = []
@@ -256,36 +268,36 @@ def main() -> int:
         still_id = f"still-{index:03d}"
         full_url = image_set["full_url"]
         analysis_url = image_set["analysis_url"]
-        full_data = request_url(full_url)
-        analysis_data = full_data if analysis_url == full_url else request_url(analysis_url)
-        digest = hashlib.sha1(full_url.encode("utf-8")).hexdigest()[:10]
-        full_ext = extension_for(full_url, full_data)
+        if analysis_url == full_url:
+            print(f"Skipping {full_url}: no smaller FilmGrab analysis variant found.", file=sys.stderr)
+            continue
+        analysis_data = request_url(analysis_url)
         analysis_ext = extension_for(analysis_url, analysis_data)
-        full_path = full_dir / f"{still_id}-{digest}{full_ext}"
         analysis_path = analysis_dir / f"{still_id}{analysis_ext}"
-        full_path.write_bytes(full_data)
         analysis_path.write_bytes(analysis_data)
 
         record = {
             "id": still_id,
             "fullUrl": full_url,
             "analysisUrl": analysis_url,
-            "fullPath": os.path.relpath(full_path, out_dir),
             "analysisPath": os.path.relpath(analysis_path, out_dir),
-            "bytes": len(full_data),
             "analysisBytes": len(analysis_data),
             "analysisWidthGuess": image_set["analysis_width"],
             "filmGrabVariantCount": image_set["variant_count"],
         }
         stills.append(record)
-        print(f"{still_id}: {full_url}")
+        print(f"{still_id}: {analysis_url}")
+
+    if not stills:
+        print("No smaller FilmGrab analysis variants found.", file=sys.stderr)
+        return 1
 
     manifest = {
         "filmGrabUrl": args.url,
         "titleGuess": infer_title(args.url),
         "maxImages": args.max_images,
         "analysisMaxEdge": args.max_edge,
-        "analysisSource": "filmgrab-srcset",
+        "analysisSource": "filmgrab-small-variants-only",
         "count": len(stills),
         "stills": stills,
     }
