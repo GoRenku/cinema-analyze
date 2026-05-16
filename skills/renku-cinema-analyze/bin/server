@@ -36,8 +36,17 @@ port_pid() {
 pid_looks_like_ours() {
   pid="$1"
   [ -n "$pid" ] || return 1
-  command -v ps >/dev/null 2>&1 || return 1
-  ps -p "$pid" -o command= 2>/dev/null | grep 'preview_report_server.py' >/dev/null 2>&1
+  if command -v ps >/dev/null 2>&1 && ps -p "$pid" -o command= 2>/dev/null | grep 'preview_report_server.py' >/dev/null 2>&1; then
+    return 0
+  fi
+  if command -v lsof >/dev/null 2>&1; then
+    lsof_output="$(lsof -nP -p "$pid" 2>/dev/null || true)"
+    printf '%s\n' "$lsof_output" | grep "$SKILL_DIR" >/dev/null 2>&1 && return 0
+    printf '%s\n' "$lsof_output" | grep " cwd .* $(pwd)$" >/dev/null 2>&1 \
+      && printf '%s\n' "$lsof_output" | sed -n '2p' | grep '^python' >/dev/null 2>&1 \
+      && return 0
+  fi
+  return 1
 }
 
 stop_pid() {

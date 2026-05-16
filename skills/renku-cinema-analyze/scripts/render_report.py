@@ -33,7 +33,7 @@ def main() -> int:
     print(f"Wrote {output / 'index.html'}")
     print(f"Wrote {output / 'analysis.json'}")
     print("Stable preview server:")
-    print(f"  {server_script} start")
+    print(f"  {server_script} start --base-dir {analysis_path.parent.resolve().parent}")
     print("Preview URL:")
     print(f"  http://127.0.0.1:{PREVIEW_PORT}/?dir={urllib.parse.quote(str(analysis_path.parent.resolve()))}")
     print("Shutdown:")

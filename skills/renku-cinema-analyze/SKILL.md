@@ -51,13 +51,19 @@ python3 <skill>/scripts/render_report.py "<work-dir>/analysis.json"
 Preview reports through the shared Renku Cinema Analyze preview server on the well-known local port `8765`. Start it once:
 
 ```bash
-<skill>/bin/server start
+<skill>/bin/server start --base-dir <analysis-base-folder>
 ```
 
 Then open the report by passing the analysis folder in the URL:
 
 ```text
 http://127.0.0.1:8765/?dir=<absolute-work-dir>
+```
+
+Opening the server home page shows the movie picker directly when the server was started with a base analysis folder:
+
+```text
+http://127.0.0.1:8765/
 ```
 
 For example:
@@ -68,7 +74,7 @@ http://127.0.0.1:8765/?dir=/Users/example/project/movie-title
 
 The renderer prints the exact preview URL after rendering.
 
-The shared preview also exposes a movie picker for sibling analysis folders. Any folder in the same parent directory that contains an `analysis.json` file appears in the modal opened from the top-bar grid icon.
+The shared preview also exposes a movie picker. On the server home page it lists analysis folders under the explicit server base folder. From a selected report, it lists sibling folders in the same parent directory. Any folder with an `analysis.json` file appears in the modal opened from the top-bar grid icon.
 
 Shut the shared preview server down when it is no longer needed:
 
@@ -84,7 +90,7 @@ Shut the shared preview server down when it is no longer needed:
 - `fullUrl` values and all cited FilmGrab still URLs must point to the full-size image, never the `/photo-gallery/thumb/` URL. The prepare script canonicalizes thumbnail URLs by removing `/thumb/`; if any thumb URL remains in `analysis.json`, fix it before validation.
 - Network downloads may require approval in sandboxed environments. If fetching FilmGrab fails with DNS, host resolution, or connection errors, retry the same prepare command with the needed network permission instead of changing the workflow. The prepare script should not create the default output folder until after FilmGrab image URLs have been fetched successfully; if an older failed run left an empty default folder behind, the script should reuse it rather than creating a `-2` suffix.
 - Use the shared preview server on `127.0.0.1:8765`; do not create a new per-report static server on a random port. Pass the analysis folder through the `dir` query parameter instead.
-- If the preview server is already running, reuse it. Use `<skill>/bin/server status` to check it, `<skill>/bin/server start` to start it, `<skill>/bin/server stop` to stop it, and `<skill>/bin/server restart` if the port state looks stale.
+- If the preview server is already running, reuse it. Use `<skill>/bin/server status` to check it, `<skill>/bin/server start --base-dir <analysis-base-folder>` to start it, `<skill>/bin/server stop` to stop it, and `<skill>/bin/server restart --base-dir <analysis-base-folder>` if the port state looks stale.
 - Browser preview is useful but not the source of truth. Validation against `manifest.json` and successful rendering of `report/index.html` plus `report/analysis.json` are required even if browser preview fails.
 
 ## Analysis Rules

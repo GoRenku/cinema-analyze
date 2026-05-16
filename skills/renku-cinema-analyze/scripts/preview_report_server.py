@@ -17,6 +17,7 @@ from pathlib import Path
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
+BASE_DIR: Path | None = None
 PID_FILE = Path(tempfile.gettempdir()) / "renku-cinema-analyze-preview.pid"
 LEGACY_PID_FILES = (
     Path(tempfile.gettempdir()) / "renku-visual-language-preview.pid",
@@ -125,6 +126,12 @@ def resolve_analysis_path(raw_dir: str | None, raw_path: str | None) -> Path:
     raise ValueError("Missing dir or path query parameter.")
 
 
+def library_root() -> Path:
+    if BASE_DIR is None:
+        raise ValueError("No base analysis folder is configured for the preview server.")
+    return BASE_DIR
+
+
 def film_title_from_analysis(analysis_path: Path) -> str:
     try:
         data = json.loads(analysis_path.read_text(encoding="utf-8"))
@@ -141,9 +148,14 @@ def film_title_from_analysis(analysis_path: Path) -> str:
 
 
 def sibling_analyses(raw_dir: str | None, raw_path: str | None) -> dict:
-    analysis_path = resolve_analysis_path(raw_dir, raw_path)
-    current_dir = analysis_path.parent
-    parent = current_dir.parent
+    if raw_dir or raw_path:
+        analysis_path = resolve_analysis_path(raw_dir, raw_path)
+        current_dir = analysis_path.parent.resolve()
+        parent = current_dir.parent.resolve()
+    else:
+        current_dir = None
+        parent = library_root()
+
     items = []
     for candidate in sorted(parent.iterdir(), key=lambda item: item.name.lower()):
         if not candidate.is_dir():
@@ -151,17 +163,18 @@ def sibling_analyses(raw_dir: str | None, raw_path: str | None) -> dict:
         candidate_analysis = candidate / "analysis.json"
         if not candidate_analysis.is_file():
             continue
+        candidate_dir = candidate.resolve()
         items.append(
             {
                 "title": film_title_from_analysis(candidate_analysis),
-                "dir": str(candidate.resolve()),
-                "current": candidate.resolve() == current_dir.resolve(),
+                "dir": str(candidate_dir),
+                "current": current_dir is not None and candidate_dir == current_dir,
             }
         )
     items.sort(key=lambda item: item["title"].lower())
     return {
-        "currentDir": str(current_dir.resolve()),
-        "parentDir": str(parent.resolve()),
+        "currentDir": str(current_dir) if current_dir else None,
+        "parentDir": str(parent),
         "items": items,
     }
 
@@ -214,19 +227,24 @@ class ReportHandler(BaseHTTPRequestHandler):
                     params.get("path", [None])[0],
                 )
             except Exception as exc:
-                self.send_json(404, {"error": str(exc)})
+                self.send_json(400, {"error": str(exc)})
                 return
             self.send_json(200, data)
             return
 
         if parsed.path == "/health":
-            self.send_json(200, {"ok": True, "pid": os.getpid()})
+            self.send_json(200, {"ok": True, "pid": os.getpid(), "baseDir": str(BASE_DIR) if BASE_DIR else None})
             return
 
         self.send_json(404, {"error": "Not found"})
 
 
-def serve(host: str, port: int) -> int:
+def serve(host: str, port: int, base_dir: Path | None) -> int:
+    global BASE_DIR
+    BASE_DIR = base_dir.resolve() if base_dir else None
+    if BASE_DIR and not BASE_DIR.is_dir():
+        raise ValueError(f"Base analysis folder does not exist: {BASE_DIR}")
+
     pid = read_pid()
     if pid and is_process_running(pid) and is_server_healthy(host, port) and pid != os.getpid():
         print(f"Renku Cinema Analyze preview server already appears to be running on pid {pid}.")
@@ -238,6 +256,8 @@ def serve(host: str, port: int) -> int:
     server = ThreadingHTTPServer((host, port), ReportHandler)
     write_pid()
     print(f"Renku Cinema Analyze preview server running at http://{host}:{port}/")
+    if BASE_DIR:
+        print(f"Base analysis folder: {BASE_DIR}")
     print(f"Use: http://{host}:{port}/?dir=/absolute/path/to/movie-folder")
     try:
         server.serve_forever()
@@ -251,6 +271,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--host", default=DEFAULT_HOST)
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
+    parser.add_argument("--base-dir", help="Base folder for the home-page movie picker")
     parser.add_argument("--stop", action="store_true", help="Stop the preview server using its pid file")
     parser.add_argument("--status", action="store_true", help="Report whether the preview server is running")
     args = parser.parse_args()
@@ -259,7 +280,7 @@ def main() -> int:
         return stop_server()
     if args.status:
         return status()
-    return serve(args.host, args.port)
+    return serve(args.host, args.port, Path(args.base_dir).expanduser() if args.base_dir else None)
 
 
 if __name__ == "__main__":

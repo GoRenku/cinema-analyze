@@ -500,7 +500,7 @@
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="libraryTitle">
     <div class="modal-header">
       <div>
-        <p class="modal-kicker">Same parent folder</p>
+        <p class="modal-kicker" id="libraryKicker">Movie library</p>
         <h2 class="modal-title" id="libraryTitle">Movie analyses</h2>
       </div>
       <button id="libraryClose" class="icon-button" type="button" title="Close" aria-label="Close movie analyses">
@@ -576,18 +576,16 @@ function closeLibraryModal() {
 }
 async function loadLibrary() {
   const dir = currentDir();
-  if (!dir) {
-    $("libraryBody").innerHTML = `<p class="modal-message">Open this report through the preview server with a <code>dir</code> parameter to browse sibling analyses.</p>`;
-    return;
-  }
+  $("libraryKicker").textContent = dir ? "Same parent folder" : "Server base folder";
   $("libraryBody").innerHTML = `<p class="modal-message">Loading analyses...</p>`;
   try {
-    const response = await fetch(`/analyses?dir=${encodeURIComponent(dir)}`, { cache: "no-store" });
+    const analysesUrl = dir ? `/analyses?dir=${encodeURIComponent(dir)}` : "/analyses";
+    const response = await fetch(analysesUrl, { cache: "no-store" });
     if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
     const data = await response.json();
     const items = data.items || [];
     if (!items.length) {
-      $("libraryBody").innerHTML = `<p class="modal-message">No other movie analyses were found in this parent folder.</p>`;
+      $("libraryBody").innerHTML = `<p class="modal-message">No movie analyses were found in ${escapeHtml(data.parentDir || "the server base folder")}.</p>`;
       return;
     }
     $("libraryBody").innerHTML = `<ul class="analysis-list">${items.map((item) => `
@@ -599,7 +597,7 @@ async function loadLibrary() {
       </li>
     `).join("")}</ul>`;
   } catch (error) {
-    $("libraryBody").innerHTML = `<p class="modal-message">Could not load sibling analyses: ${escapeHtml(error.message)}</p>`;
+    $("libraryBody").innerHTML = `<p class="modal-message">Could not load movie analyses: ${escapeHtml(error.message)}. Start the preview server with a base analysis folder to use the home-page picker.</p>`;
   }
 }
 function stillEl(url) {
@@ -690,7 +688,13 @@ async function loadData() {
   try {
     const params = currentParams();
     const dir = params.get("dir");
-    const dataUrl = params.get("data") || (dir ? `/analysis.json?dir=${encodeURIComponent(dir)}` : "analysis.json");
+    const dataParam = params.get("data");
+    if (!dir && !dataParam) {
+      page.innerHTML = `<div class="empty"><h2>Choose a movie analysis.</h2><p>Select a report from the movie library to start browsing.</p></div>`;
+      openLibraryModal();
+      return;
+    }
+    const dataUrl = dataParam || `/analysis.json?dir=${encodeURIComponent(dir)}`;
     const response = await fetch(dataUrl, { cache: "no-store" });
     if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
     render(await response.json());
