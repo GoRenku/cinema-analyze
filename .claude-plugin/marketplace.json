@@ -1,0 +1,13 @@
+{
+  "name": "cinema-analyze",
+  "owner": {
+    "name": "Kerem Karatal"
+  },
+  "plugins": [
+    {
+      "name": "cinema-analyze",
+      "source": "./",
+      "description": "Extract FilmGrab stills, analyze visual language, and render browser reports for cinematographers."
+    }
+  ]
+}

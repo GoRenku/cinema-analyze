@@ -1,0 +1,35 @@
+# macOS / editor noise
+.DS_Store
+._*
+*.swp
+*.swo
+*~
+
+# Python runtime artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+
+# Browser/test tooling output
+.playwright-mcp/
+playwright-report/
+test-results/
+
+# Temporary FilmGrab analysis output from local/manual runs.
+# These folders are scratch artifacts and should not live in this repo.
+filmgrab-*/
+
+# Temporary local experiments
+playground.html

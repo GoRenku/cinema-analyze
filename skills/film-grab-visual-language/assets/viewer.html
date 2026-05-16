@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Visual Language Study</title>
+<style>
+  :root {
+    --bg: #10100f;
+    --bg-2: #181715;
+    --surface: #1f1d1a;
+    --surface-2: #292620;
+    --card: #201e1b;
+    --card-2: #292620;
+    --border: #3b342a;
+    --border-2: #574a39;
+    --text: #f4efe6;
+    --text-dim: #c1b7a7;
+    --text-faint: #867c70;
+    --accent: #d8a84f;
+    --accent-2: #7cb7c5;
+    --danger: #cf3654;
+    --shadow: rgba(0, 0, 0, 0.35);
+    --radius: 6px;
+    --page-max: 1240px;
+    --section-gap: 58px;
+    --title-font: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  html[data-style="gallery"] {
+    --bg: #f6f1e8;
+    --bg-2: #ebe3d6;
+    --surface: #fffaf1;
+    --surface-2: #f0e6d6;
+    --card: #fffaf1;
+    --card-2: #f2e7d8;
+    --border: #d9ccba;
+    --border-2: #bba88e;
+    --text: #22201d;
+    --text-dim: #665d52;
+    --text-faint: #918676;
+    --accent: #2f766d;
+    --accent-2: #bd415d;
+    --danger: #bd415d;
+    --shadow: rgba(74, 54, 28, 0.12);
+    --radius: 4px;
+    --page-max: 1320px;
+    --section-gap: 64px;
+  }
+  html[data-style="dossier"] {
+    --bg: #090a0b;
+    --bg-2: #0f1114;
+    --surface: #12161a;
+    --surface-2: #171c22;
+    --card: #12161a;
+    --card-2: #1a2028;
+    --border: #27313b;
+    --border-2: #3a4856;
+    --text: #eef2f4;
+    --text-dim: #aeb8c1;
+    --text-faint: #687480;
+    --accent: #ff3d5f;
+    --accent-2: #45c7d3;
+    --danger: #ff3d5f;
+    --shadow: rgba(0, 0, 0, 0.5);
+    --radius: 2px;
+    --page-max: 1180px;
+    --section-gap: 44px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--sans); font-size: 15px; line-height: 1.6; text-rendering: optimizeLegibility; }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 34rem),
+      linear-gradient(180deg, color-mix(in srgb, var(--bg-2) 64%, transparent), transparent 22rem);
+    opacity: 0.8;
+  }
+  html[data-style="gallery"] body::before {
+    background:
+      linear-gradient(90deg, rgba(0,0,0,0.045) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(0,0,0,0.035) 1px, transparent 1px);
+    background-size: 46px 46px;
+    opacity: 0.5;
+  }
+  html[data-style="dossier"] body::before {
+    background:
+      linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 28px 28px;
+    opacity: 0.35;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-inner {
+    max-width: var(--page-max);
+    margin: 0 auto;
+    padding: 12px 28px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 18px;
+  }
+  .brand { font-weight: 760; font-size: 16px; letter-spacing: 0.01em; white-space: nowrap; }
+  .brand span { color: var(--accent); }
+  .style-switcher {
+    justify-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    box-shadow: 0 10px 30px var(--shadow);
+  }
+  .style-button {
+    appearance: none;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    font: 700 11px/1 var(--mono);
+    letter-spacing: 0.08em;
+    min-height: 30px;
+    padding: 0 12px;
+    text-transform: uppercase;
+  }
+  .style-button:hover { color: var(--text); }
+  .style-button.active { background: var(--accent); color: var(--bg); }
+  .topbar-actions { display: inline-flex; align-items: center; justify-self: end; gap: 8px; }
+  .icon-button {
+    appearance: none;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface) 86%, transparent);
+    color: var(--text-dim);
+    cursor: pointer;
+    box-shadow: 0 10px 28px var(--shadow);
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+  }
+  .icon-button:hover { background: var(--accent); border-color: var(--accent); color: var(--bg); transform: translateY(-1px); }
+  .icon-button svg { width: 18px; height: 18px; display: block; }
+  .source-link { overflow: hidden; }
+  .source-link img { width: 18px; height: 18px; display: block; object-fit: cover; filter: grayscale(1) contrast(1.25); }
+  .source-link:hover img { filter: none; }
+  .page { position: relative; max-width: var(--page-max); margin: 0 auto; padding: 0 28px 72px; }
+  .hero {
+    min-height: auto;
+    padding: 42px 0 44px;
+    display: grid;
+    grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+    gap: 34px;
+    align-items: end;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-text { min-width: 0; }
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+  .film-title {
+    font-family: var(--title-font);
+    font-size: clamp(52px, 8vw, 104px);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+    margin: 0 0 18px;
+    max-width: 760px;
+  }
+  .film-meta { display: flex; flex-wrap: wrap; gap: 6px 24px; font-size: 14px; color: var(--text-dim); font-family: var(--mono); }
+  .film-meta .key { color: var(--text-faint); margin-right: 6px; }
+  .film-meta .val { color: var(--text); }
+  .hero-grid {
+    margin-top: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 0.9fr);
+    gap: 10px;
+    min-height: 0;
+    height: clamp(410px, 45vw, 560px);
+  }
+  .hero-grid .still { width: 100%; height: 100%; min-width: 0; min-height: 0; aspect-ratio: auto; }
+  .hero-grid .still:first-child { grid-column: 1 / -1; grid-row: 1; }
+  section.block { padding: var(--section-gap) 0; border-bottom: 1px solid var(--border); }
+  .section-header { display: grid; grid-template-columns: minmax(190px, 0.7fr) minmax(0, 2.3fr); gap: 42px; margin-bottom: 28px; }
+  .section-number { font-family: var(--mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.15em; text-transform: uppercase; }
+  .section-title { font-family: var(--title-font); font-weight: 760; font-size: clamp(32px, 4vw, 56px); letter-spacing: -0.035em; line-height: 0.98; margin: 8px 0 0; }
+  .section-lede { max-width: 850px; font-size: 18px; line-height: 1.7; color: var(--text); }
+  .section-lede p { margin: 0 0 14px; }
+  .still { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; cursor: zoom-in; aspect-ratio: 16 / 9; position: relative; transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; box-shadow: 0 18px 50px var(--shadow); }
+  .still:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 22px 60px var(--shadow); }
+  .still img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .still .placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-faint); font-family: var(--mono); font-size: 11px; }
+  .still-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; margin: 22px 0; }
+  .still-row.compact { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .still a.full { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,0.72); color: var(--text); border: 1px solid rgba(255,255,255,0.16); border-radius: 4px; padding: 4px 7px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin: 28px 0; }
+  .swatch { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: 0 16px 36px var(--shadow); }
+  .swatch-fill { aspect-ratio: 5 / 3; width: 100%; }
+  .swatch-info { padding: 12px 14px; }
+  .swatch-name { font-weight: 760; font-size: 14px; margin: 0 0 4px; }
+  .swatch-hex { font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em; text-transform: uppercase; }
+  .swatch-meaning { font-size: 12.5px; color: var(--text-dim); margin-top: 8px; line-height: 1.5; }
+  .observation { background: color-mix(in srgb, var(--card) 92%, transparent); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px 28px; margin: 16px 0; box-shadow: 0 16px 40px var(--shadow); }
+  .observation-text { font-size: 20px; line-height: 1.55; font-weight: 620; letter-spacing: -0.012em; margin: 0 0 18px; }
+  .observation .still-row { margin-bottom: 0; }
+  .pattern { margin: 24px 0; padding-top: 24px; border-top: 1px dashed var(--border); }
+  .pattern:first-of-type { border-top: none; padding-top: 0; }
+  .pattern-name { font-size: 24px; font-weight: 760; letter-spacing: -0.025em; margin: 0 0 8px; }
+  .pattern-name::before { content: ""; display: inline-block; width: 10px; height: 10px; background: var(--accent); margin-right: 12px; vertical-align: 2px; }
+  .pattern-desc { color: var(--text-dim); margin: 0 0 14px; line-height: 1.65; }
+  .inspiration-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(285px, 1fr)); gap: 16px; margin-top: 24px; }
+  .inspiration-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: 0 16px 40px var(--shadow); }
+  .inspiration-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  .inspiration-category { font-family: var(--mono); font-size: 10.5px; color: var(--accent); letter-spacing: 0.14em; text-transform: uppercase; }
+  .inspiration-confidence { font-family: var(--mono); font-size: 10.5px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--border); border-radius: 999px; padding: 4px 8px; white-space: nowrap; }
+  .inspiration-name { font-size: 23px; font-weight: 760; letter-spacing: -0.025em; line-height: 1.08; margin: 0 0 10px; }
+  .inspiration-why { color: var(--text-dim); margin: 0; line-height: 1.6; }
+  .inspiration-card .still-row { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); margin-bottom: 0; }
+  .tone-strip { height: 110px; border-radius: var(--radius); margin: 20px 0; border: 1px solid var(--border); box-shadow: 0 16px 40px var(--shadow); }
+  .tone-labels { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 6px; }
+  .mood-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; }
+  .mood-tag { background: var(--card-2); border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; font-family: var(--mono); font-size: 11.5px; color: var(--text); letter-spacing: 0.08em; text-transform: uppercase; }
+  .constitution { background: linear-gradient(180deg, var(--card) 0%, var(--bg-2) 100%); border: 1px solid var(--border); border-radius: var(--radius); padding: 48px; margin-top: 24px; box-shadow: 0 18px 60px var(--shadow); }
+  .constitution-summary { font-size: 24px; font-weight: 620; letter-spacing: -0.018em; line-height: 1.55; margin: 0 0 32px; }
+  .principles { list-style: none; margin: 0; padding: 0; counter-reset: principle; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+  .principles li { counter-increment: principle; padding: 18px 20px 18px 56px; background: color-mix(in srgb, var(--surface-2) 76%, transparent); border: 1px solid var(--border); border-radius: var(--radius); position: relative; }
+  .principles li::before { content: counter(principle, decimal-leading-zero); position: absolute; left: 18px; top: 17px; font-family: var(--mono); font-size: 12px; color: var(--accent); }
+  .empty, .error { text-align: center; padding: 120px 24px; color: var(--text-dim); }
+  .empty h2, .error h2 { font-size: 42px; margin: 0 0 12px; color: var(--text); }
+  footer { max-width: 1200px; margin: 0 auto; padding: 40px 28px 60px; color: var(--text-faint); font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; text-align: center; border-top: 1px solid var(--border); }
+  .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.92); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 32px; cursor: zoom-out; }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 100%; max-height: 100%; box-shadow: 0 30px 80px rgba(0,0,0,0.7); }
+  .modal-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    backdrop-filter: blur(16px);
+  }
+  .modal-layer.open { display: flex; }
+  .modal {
+    width: min(620px, 100%);
+    max-height: min(720px, calc(100vh - 48px));
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) + 6px);
+    background: color-mix(in srgb, var(--surface) 96%, var(--bg));
+    box-shadow: 0 30px 90px var(--shadow);
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 20px 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-kicker {
+    margin: 0 0 5px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .modal-title { margin: 0; font-size: 24px; line-height: 1; letter-spacing: -0.02em; }
+  .modal-body { overflow: auto; padding: 10px; }
+  .analysis-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .analysis-link {
+    width: 100%;
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    padding: 14px 14px;
+    text-align: left;
+    font: inherit;
+  }
+  .analysis-link:hover { border-color: var(--border); background: color-mix(in srgb, var(--card-2) 74%, transparent); }
+  .analysis-link.current { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+  .analysis-title { font-weight: 760; letter-spacing: -0.012em; }
+  .analysis-current {
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .modal-message { color: var(--text-dim); padding: 18px 14px; margin: 0; }
+  html[data-style="gallery"] .hero { display: block; padding: 48px 0 52px; }
+  html[data-style="gallery"] .film-title {
+    max-width: 880px;
+    font-size: clamp(50px, 7vw, 96px);
+  }
+  html[data-style="gallery"] .hero-grid {
+    margin-top: 30px;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: 220px 220px;
+    min-height: 0;
+    height: auto;
+  }
+  html[data-style="gallery"] .hero-grid .still:first-child { grid-column: 1 / span 7; grid-row: 1 / span 2; }
+  html[data-style="gallery"] .hero-grid .still:nth-child(2) { grid-column: 8 / span 5; }
+  html[data-style="gallery"] .hero-grid .still:nth-child(3) { grid-column: 8 / span 5; }
+  html[data-style="gallery"] section.block {
+    border-bottom: 0;
+  }
+  html[data-style="gallery"] .section-header {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 920px;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  html[data-style="gallery"] .section-title { color: var(--accent); }
+  html[data-style="gallery"] .observation,
+  html[data-style="gallery"] .inspiration-card,
+  html[data-style="gallery"] .constitution {
+    background: color-mix(in srgb, var(--card) 84%, transparent);
+  }
+  html[data-style="dossier"] body { font-size: 14px; }
+  html[data-style="dossier"] .topbar-inner { max-width: none; }
+  html[data-style="dossier"] .page { max-width: var(--page-max); }
+  html[data-style="dossier"] .hero {
+    min-height: auto;
+    padding: 36px 0 38px;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr);
+    gap: 28px;
+    align-items: center;
+  }
+  html[data-style="dossier"] .hero-text { grid-column: 1; }
+  html[data-style="dossier"] .hero-grid {
+    grid-column: 2;
+    grid-row: 1;
+    margin-top: 0;
+    min-height: 0;
+    height: clamp(360px, 42vw, 520px);
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+  html[data-style="dossier"] .hero-grid .still:first-child { grid-row: auto; }
+  html[data-style="dossier"] .hero-grid .still:nth-child(n+2) { display: none; }
+  html[data-style="dossier"] .film-title {
+    font-size: clamp(44px, 6vw, 82px);
+    letter-spacing: -0.03em;
+  }
+  html[data-style="dossier"] .section-header {
+    grid-template-columns: minmax(150px, 0.55fr) minmax(0, 2fr);
+    gap: 30px;
+    margin-bottom: 24px;
+  }
+  html[data-style="dossier"] .section-title { font-size: clamp(28px, 3.4vw, 42px); }
+  html[data-style="dossier"] .still-row { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+  html[data-style="dossier"] .still-row.compact { grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); }
+  html[data-style="dossier"] .pattern,
+  html[data-style="dossier"] .observation,
+  html[data-style="dossier"] .inspiration-card,
+  html[data-style="dossier"] .constitution {
+    border-left: 3px solid var(--accent);
+  }
+  @media (max-width: 820px) {
+    .topbar-inner { grid-template-columns: 1fr auto; justify-items: start; gap: 10px 14px; padding: 10px 18px; }
+    .style-switcher { grid-column: 1 / -1; justify-self: stretch; width: 100%; overflow-x: auto; }
+    .style-button { flex: 1; }
+    .topbar-actions { justify-self: end; }
+    .icon-button { width: 34px; height: 34px; }
+    .hero, html[data-style="dossier"] .hero { min-height: auto; display: block; padding: 32px 0 34px; }
+    .hero-grid, html[data-style="dossier"] .hero-grid, html[data-style="gallery"] .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto;
+      height: auto;
+      min-height: 0;
+      aspect-ratio: auto;
+      margin-top: 28px;
+    }
+    .hero-grid .still:first-child, html[data-style="gallery"] .hero-grid .still:first-child {
+      grid-column: 1 / -1;
+      grid-row: auto;
+    }
+    .hero-grid .still { height: auto; aspect-ratio: 16 / 9; }
+    html[data-style="gallery"] .hero-grid .still:nth-child(2),
+    html[data-style="gallery"] .hero-grid .still:nth-child(3) { grid-column: auto; }
+    html[data-style="dossier"] .hero-grid .still:nth-child(n+2) { display: block; }
+    .section-header, html[data-style="dossier"] .section-header { grid-template-columns: 1fr; gap: 16px; }
+    section.block { padding: 38px 0; }
+    .film-title { font-size: clamp(42px, 14vw, 76px); }
+    .page { padding-inline: 18px; }
+    .observation, .constitution { padding: 22px; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">Visual Language<span>.</span></div>
+    <div class="style-switcher" id="styleSwitcher" aria-label="Visual style options"></div>
+    <div class="topbar-actions">
+      <a id="sourceLink" class="icon-button source-link" href="#" target="_blank" rel="noopener" title="Open FilmGrab source" aria-label="Open FilmGrab source">
+        <img src="https://film-grab.com/wp-content/uploads/2019/02/icon-75x75.jpg" alt="" />
+      </a>
+      <button id="libraryButton" class="icon-button" type="button" title="Open other movie analyses" aria-label="Open other movie analyses">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+<main id="page" class="page"></main>
+<footer>Rendered from analysis.json</footer>
+<div class="modal-layer" id="libraryModal" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="libraryTitle">
+    <div class="modal-header">
+      <div>
+        <p class="modal-kicker">Same parent folder</p>
+        <h2 class="modal-title" id="libraryTitle">Movie analyses</h2>
+      </div>
+      <button id="libraryClose" class="icon-button" type="button" title="Close" aria-label="Close movie analyses">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M6 6l12 12"></path>
+          <path d="M18 6L6 18"></path>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body" id="libraryBody">
+      <p class="modal-message">Loading analyses...</p>
+    </div>
+  </div>
+</div>
+<div class="lightbox" id="lightbox"><img id="lightboxImg" alt="" /></div>
+<script>
+const $ = (id) => document.getElementById(id);
+const page = $("page");
+const styles = [
+  { id: "cinema", label: "Cinema" },
+  { id: "gallery", label: "Gallery" },
+  { id: "dossier", label: "Dossier" },
+];
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function currentParams() {
+  return new URLSearchParams(location.search);
+}
+function applyStyle(styleId, updateUrl=false) {
+  const style = styles.some((item) => item.id === styleId) ? styleId : "cinema";
+  document.documentElement.dataset.style = style;
+  document.querySelectorAll(".style-button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.style === style);
+  });
+  if (updateUrl) {
+    const params = currentParams();
+    params.set("style", style);
+    history.replaceState(null, "", `${location.pathname}?${params.toString()}`);
+  }
+}
+function currentStyle() {
+  return document.documentElement.dataset.style || "cinema";
+}
+function renderStyleSwitcher() {
+  $("styleSwitcher").innerHTML = styles.map((style) => (
+    `<button class="style-button" type="button" data-style="${style.id}">${style.label}</button>`
+  )).join("");
+  $("styleSwitcher").addEventListener("click", (event) => {
+    const button = event.target.closest(".style-button");
+    if (button) applyStyle(button.dataset.style, true);
+  });
+}
+function currentDir() {
+  return currentParams().get("dir");
+}
+function reportUrlForDir(dir) {
+  const params = currentParams();
+  params.set("dir", dir);
+  params.set("style", currentStyle());
+  params.delete("data");
+  return `${location.pathname}?${params.toString()}`;
+}
+function openLibraryModal() {
+  $("libraryModal").classList.add("open");
+  $("libraryModal").setAttribute("aria-hidden", "false");
+  $("libraryClose").focus();
+  loadLibrary();
+}
+function closeLibraryModal() {
+  $("libraryModal").classList.remove("open");
+  $("libraryModal").setAttribute("aria-hidden", "true");
+}
+async function loadLibrary() {
+  const dir = currentDir();
+  if (!dir) {
+    $("libraryBody").innerHTML = `<p class="modal-message">Open this report through the preview server with a <code>dir</code> parameter to browse sibling analyses.</p>`;
+    return;
+  }
+  $("libraryBody").innerHTML = `<p class="modal-message">Loading analyses...</p>`;
+  try {
+    const response = await fetch(`/analyses?dir=${encodeURIComponent(dir)}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+    const data = await response.json();
+    const items = data.items || [];
+    if (!items.length) {
+      $("libraryBody").innerHTML = `<p class="modal-message">No other movie analyses were found in this parent folder.</p>`;
+      return;
+    }
+    $("libraryBody").innerHTML = `<ul class="analysis-list">${items.map((item) => `
+      <li>
+        <button class="analysis-link ${item.current ? "current" : ""}" type="button" data-dir="${escapeHtml(item.dir)}">
+          <span class="analysis-title">${escapeHtml(item.title)}</span>
+          ${item.current ? `<span class="analysis-current">Current</span>` : ""}
+        </button>
+      </li>
+    `).join("")}</ul>`;
+  } catch (error) {
+    $("libraryBody").innerHTML = `<p class="modal-message">Could not load sibling analyses: ${escapeHtml(error.message)}</p>`;
+  }
+}
+function stillEl(url) {
+  if (!url) return `<div class="still"><div class="placeholder">no still</div></div>`;
+  const safe = escapeHtml(url);
+  return `<div class="still" data-src="${safe}"><img src="${safe}" alt="film still" loading="lazy" onerror="this.style.display='none';this.parentNode.innerHTML='<div class=&quot;placeholder&quot;>still unavailable</div>'"/><a class="full" href="${safe}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Full</a></div>`;
+}
+function stillsRow(urls, compact=false) {
+  if (!urls || !urls.length) return "";
+  return `<div class="still-row ${compact ? "compact" : ""}">${urls.map(stillEl).join("")}</div>`;
+}
+function toneGradient(palette) {
+  if (!palette || !palette.length) return "linear-gradient(90deg,#222,#444)";
+  return `linear-gradient(90deg, ${palette.map((p, i) => `${p.hex} ${(i / Math.max(1, palette.length - 1)) * 100}%`).join(", ")})`;
+}
+function renderHero(data) {
+  const f = data.film || {};
+  const stills = data.coreVisualLanguage?.exampleStills?.slice(0, 3) || [];
+  $("sourceLink").href = f.filmGrabUrl || "#";
+  $("sourceLink").hidden = !f.filmGrabUrl;
+  return `<header class="hero">
+    <div class="hero-text">
+      <div class="eyebrow">Visual Language Study</div>
+      <h1 class="film-title">${escapeHtml(f.title || "Untitled")}</h1>
+      <div class="film-meta">
+        ${f.year ? `<span><span class="key">Year</span><span class="val">${escapeHtml(f.year)}</span></span>` : ""}
+        ${f.director ? `<span><span class="key">Director</span><span class="val">${escapeHtml(f.director)}</span></span>` : ""}
+        ${f.cinematographer ? `<span><span class="key">Cinematography</span><span class="val">${escapeHtml(f.cinematographer)}</span></span>` : ""}
+      </div>
+    </div>
+    ${stills.length ? `<div class="hero-grid">${stills.map(stillEl).join("")}</div>` : ""}
+  </header>`;
+}
+function renderCore(data, num) {
+  const c = data.coreVisualLanguage;
+  if (!c) return "";
+  return `<section class="block"><div class="section-header"><div><div class="section-number">${num} - Core idea</div><h2 class="section-title">The thesis</h2></div><div class="section-lede"><p>${escapeHtml(c.idea)}</p></div></div>${stillsRow(c.exampleStills)}</section>`;
+}
+function renderColor(data, num) {
+  const c = data.color;
+  if (!c) return "";
+  const palette = (c.palette || []).map(p => `<div class="swatch"><div class="swatch-fill" style="background:${escapeHtml(p.hex)}"></div><div class="swatch-info"><div class="swatch-name">${escapeHtml(p.name)}</div><div class="swatch-hex">${escapeHtml(p.hex)}</div>${p.meaning ? `<div class="swatch-meaning">${escapeHtml(p.meaning)}</div>` : ""}</div></div>`).join("");
+  const observations = (c.observations || []).map(o => `<div class="observation"><p class="observation-text">${escapeHtml(o.text)}</p>${stillsRow(o.stills, true)}</div>`).join("");
+  return `<section class="block"><div class="section-header"><div><div class="section-number">${num} - Colour</div><h2 class="section-title">Palette</h2></div><div class="section-lede"><p>${escapeHtml(c.description)}</p></div></div><div class="palette">${palette}</div>${observations}</section>`;
+}
+function renderGrading(data, num) {
+  const g = data.grading;
+  if (!g) return "";
+  const tags = String(g.mood || "").split(/[·•|,]/).map(s => s.trim()).filter(Boolean);
+  return `<section class="block"><div class="section-header"><div><div class="section-number">${num} - Grading</div><h2 class="section-title">Tone &amp; mood</h2></div><div class="section-lede"><p>${escapeHtml(g.description)}</p><div class="tone-strip" style="background:${toneGradient(data.color?.palette)}"></div><div class="tone-labels"><span>shadow</span><span>midtone</span><span>highlight</span></div>${tags.length ? `<div class="mood-tags">${tags.map(t => `<span class="mood-tag">${escapeHtml(t)}</span>`).join("")}</div>` : ""}</div></div>${stillsRow(g.exampleStills)}</section>`;
+}
+function renderPatternSection(title, num, data, key, listKey) {
+  const s = data[key];
+  if (!s) return "";
+  const patterns = (s[listKey] || []).map(p => `<div class="pattern"><h3 class="pattern-name">${escapeHtml(p.name)}</h3><p class="pattern-desc">${escapeHtml(p.description)}</p>${stillsRow(p.stills, true)}</div>`).join("");
+  return `<section class="block"><div class="section-header"><div><div class="section-number">${num} - ${escapeHtml(title)}</div><h2 class="section-title">${escapeHtml(title)}</h2></div><div class="section-lede"><p>${escapeHtml(s.description)}</p></div></div>${patterns}</section>`;
+}
+function renderTexture(data, num) {
+  const t = data.texture;
+  if (!t) return "";
+  const observations = (t.observations || []).map(o => `<div class="observation"><p class="observation-text">${escapeHtml(o.text)}</p>${stillsRow(o.stills, true)}</div>`).join("");
+  return `<section class="block"><div class="section-header"><div><div class="section-number">${num} - Texture</div><h2 class="section-title">Surface</h2></div><div class="section-lede"><p>${escapeHtml(t.description)}</p></div></div>${observations}</section>`;
+}
+function renderInspiredBy(data, num) {
+  const i = data.inspiredBy;
+  if (!i || !(i.items || []).length) return "";
+  const items = (i.items || []).map(item => `<article class="inspiration-card">
+    <div class="inspiration-meta">
+      <span class="inspiration-category">${escapeHtml(item.category || "reference")}</span>
+      ${item.confidence ? `<span class="inspiration-confidence">${escapeHtml(item.confidence)}</span>` : ""}
+    </div>
+    <h3 class="inspiration-name">${escapeHtml(item.name)}</h3>
+    <p class="inspiration-why">${escapeHtml(item.why)}</p>
+    ${stillsRow(item.stills, true)}
+  </article>`).join("");
+  return `<section class="block"><div class="section-header"><div><div class="section-number">${num} - Lineage</div><h2 class="section-title">Inspired by</h2></div><div class="section-lede"><p>${escapeHtml(i.description)}</p></div></div><div class="inspiration-grid">${items}</div></section>`;
+}
+function renderConstitution(data, num) {
+  const v = data.visualConstitution;
+  if (!v) return "";
+  return `<section class="block"><div class="section-header"><div><div class="section-number">${num} - Constitution</div><h2 class="section-title">Visual constitution</h2></div><div class="section-lede"><p>The principles that define how this film looks at the world.</p></div></div><div class="constitution"><p class="constitution-summary">${escapeHtml(v.summary)}</p><ol class="principles">${(v.principles || []).map(p => `<li>${escapeHtml(p)}</li>`).join("")}</ol></div></section>`;
+}
+function render(data) {
+  page.innerHTML = [renderHero(data), renderCore(data, "01"), renderColor(data, "02"), renderGrading(data, "03"), renderPatternSection("Composition", "04", data, "composition", "patterns"), renderPatternSection("Lighting", "05", data, "lighting", "techniques"), renderTexture(data, "06"), renderInspiredBy(data, "07"), renderConstitution(data, "08")].join("");
+}
+async function loadData() {
+  try {
+    const params = currentParams();
+    const dir = params.get("dir");
+    const dataUrl = params.get("data") || (dir ? `/analysis.json?dir=${encodeURIComponent(dir)}` : "analysis.json");
+    const response = await fetch(dataUrl, { cache: "no-store" });
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+    render(await response.json());
+  } catch (error) {
+    page.innerHTML = `<div class="error"><h2>Could not load analysis.json.</h2><p>${escapeHtml(error.message)}</p><p>Open the report through the FilmGrab preview server on <code>127.0.0.1:8765</code>.</p></div>`;
+  }
+}
+renderStyleSwitcher();
+applyStyle(currentParams().get("style") || "cinema");
+$("libraryButton").addEventListener("click", openLibraryModal);
+$("libraryClose").addEventListener("click", closeLibraryModal);
+$("libraryModal").addEventListener("click", (event) => {
+  if (event.target === $("libraryModal")) closeLibraryModal();
+});
+$("libraryBody").addEventListener("click", (event) => {
+  const button = event.target.closest(".analysis-link[data-dir]");
+  if (!button) return;
+  const dir = button.getAttribute("data-dir");
+  if (dir && !button.classList.contains("current")) location.href = reportUrlForDir(dir);
+  if (button.classList.contains("current")) closeLibraryModal();
+});
+document.addEventListener("click", (event) => {
+  const still = event.target.closest(".still[data-src]");
+  if (still) {
+    $("lightboxImg").src = still.getAttribute("data-src");
+    $("lightbox").classList.add("open");
+  } else if (event.target.closest(".lightbox")) {
+    $("lightbox").classList.remove("open");
+    $("lightboxImg").src = "";
+  }
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    $("lightbox").classList.remove("open");
+    closeLibraryModal();
+  }
+});
+loadData();
+</script>
+</body>
+</html>
