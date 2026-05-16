@@ -1,11 +1,11 @@
 {
   "name": "cinema-analyze",
-  "description": "Claude Code plugin for FilmGrab visual-language studies: extract movie stills, prepare smaller FilmGrab image variants for AI vision analysis, produce structured JSON, validate image citations, and render browser reports for cinematographers.",
+  "description": "Claude Code plugin for Renku cinema analysis studies: extract movie stills, prepare smaller FilmGrab image variants for AI vision analysis, produce structured JSON, validate image citations, and render browser reports for cinematographers.",
   "version": "1.0.0",
   "author": {
     "name": "Kerem Karatal"
   },
   "license": "MIT",
-  "homepage": "https://github.com/keremk/cinema-analyze",
-  "repository": "https://github.com/keremk/cinema-analyze"
+  "homepage": "https://github.com/GoRenku/cinema-analyze",
+  "repository": "https://github.com/GoRenku/cinema-analyze"
 }

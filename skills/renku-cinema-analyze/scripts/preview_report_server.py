@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Serve FilmGrab visual-language reports on one stable local preview port."""
+"""Serve Renku Cinema Analyze reports on one stable local preview port."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import signal
+import socket
 import sys
 import tempfile
 import urllib.parse
@@ -16,7 +17,11 @@ from pathlib import Path
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
-PID_FILE = Path(tempfile.gettempdir()) / "filmgrab-visual-language-preview.pid"
+PID_FILE = Path(tempfile.gettempdir()) / "renku-cinema-analyze-preview.pid"
+LEGACY_PID_FILES = (
+    Path(tempfile.gettempdir()) / "renku-visual-language-preview.pid",
+    Path(tempfile.gettempdir()) / "filmgrab-visual-language-preview.pid",
+)
 
 
 def skill_dir() -> Path:
@@ -37,7 +42,37 @@ def is_process_running(pid: int) -> bool:
     return True
 
 
+def is_server_healthy(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT) -> bool:
+    try:
+        with socket.create_connection((host, port), timeout=0.25) as sock:
+            request = f"GET /health HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n"
+            sock.sendall(request.encode("ascii"))
+            return b'"ok": true' in sock.recv(512)
+    except OSError:
+        return False
+
+
 def read_pid() -> int | None:
+    for pid_file in (PID_FILE, *LEGACY_PID_FILES):
+        try:
+            return int(pid_file.read_text(encoding="utf-8").strip())
+        except Exception:
+            continue
+    return None
+
+
+def remove_pid_file_for(pid: int) -> None:
+    for pid_file in (PID_FILE, *LEGACY_PID_FILES):
+        try:
+            if int(pid_file.read_text(encoding="utf-8").strip()) == pid:
+                pid_file.unlink()
+        except FileNotFoundError:
+            pass
+        except Exception:
+            continue
+
+
+def read_pid_from_current_file() -> int | None:
     try:
         return int(PID_FILE.read_text(encoding="utf-8").strip())
     except Exception:
@@ -50,7 +85,7 @@ def write_pid() -> None:
 
 def remove_pid() -> None:
     try:
-        if read_pid() == os.getpid():
+        if read_pid_from_current_file() == os.getpid():
             PID_FILE.unlink()
     except FileNotFoundError:
         pass
@@ -62,21 +97,23 @@ def stop_server() -> int:
         print("No preview server pid file found.")
         return 0
     if not is_process_running(pid):
-        PID_FILE.unlink(missing_ok=True)
+        remove_pid_file_for(pid)
         print(f"Removed stale preview server pid file for pid {pid}.")
         return 0
     os.kill(pid, signal.SIGTERM)
-    PID_FILE.unlink(missing_ok=True)
-    print(f"Stopped FilmGrab preview server pid {pid}.")
+    remove_pid_file_for(pid)
+    print(f"Stopped Renku Cinema Analyze preview server pid {pid}.")
     return 0
 
 
 def status() -> int:
     pid = read_pid()
-    if pid and is_process_running(pid):
-        print(f"FilmGrab preview server appears to be running on pid {pid}.")
+    if pid and is_process_running(pid) and is_server_healthy():
+        print(f"Renku Cinema Analyze preview server appears to be running on pid {pid}.")
         return 0
-    print("FilmGrab preview server is not running.")
+    if pid:
+        remove_pid_file_for(pid)
+    print("Renku Cinema Analyze preview server is not running.")
     return 1
 
 
@@ -191,15 +228,17 @@ class ReportHandler(BaseHTTPRequestHandler):
 
 def serve(host: str, port: int) -> int:
     pid = read_pid()
-    if pid and is_process_running(pid) and pid != os.getpid():
-        print(f"FilmGrab preview server already appears to be running on pid {pid}.")
-        print(f"Use: http://{host}:{port}/?dir=/absolute/path/to/filmgrab-folder")
+    if pid and is_process_running(pid) and is_server_healthy(host, port) and pid != os.getpid():
+        print(f"Renku Cinema Analyze preview server already appears to be running on pid {pid}.")
+        print(f"Use: http://{host}:{port}/?dir=/absolute/path/to/movie-folder")
         return 0
+    if pid:
+        remove_pid_file_for(pid)
 
     server = ThreadingHTTPServer((host, port), ReportHandler)
     write_pid()
-    print(f"FilmGrab preview server running at http://{host}:{port}/")
-    print(f"Use: http://{host}:{port}/?dir=/absolute/path/to/filmgrab-folder")
+    print(f"Renku Cinema Analyze preview server running at http://{host}:{port}/")
+    print(f"Use: http://{host}:{port}/?dir=/absolute/path/to/movie-folder")
     try:
         server.serve_forever()
     finally:

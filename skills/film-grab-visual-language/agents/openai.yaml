@@ -1,4 +1,0 @@
-interface:
-  display_name: "FilmGrab Visual Language"
-  short_description: "Analyze FilmGrab stills into DP-ready visual studies."
-  default_prompt: "Use $film-grab-visual-language to analyze this FilmGrab movie page into a browser-ready visual language study."

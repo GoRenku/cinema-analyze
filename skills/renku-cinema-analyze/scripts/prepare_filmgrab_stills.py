@@ -74,13 +74,21 @@ def canonical_url(url: str) -> str:
     return urllib.parse.urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
 
 
+def full_size_url(url: str) -> str:
+    parsed = urllib.parse.urlparse(canonical_url(url))
+    path = parsed.path
+    if "/wp-content/uploads/" in path:
+        path = path.replace("/photo-gallery/thumb/", "/photo-gallery/")
+    return urllib.parse.urlunparse((parsed.scheme, parsed.netloc, path, "", "", ""))
+
+
 def infer_width_from_url(url: str) -> int | None:
     match = re.search(r"-(\d{2,5})x\d{2,5}(?=\.(?:jpe?g|png|webp)$)", urllib.parse.urlparse(url).path, re.I)
     return int(match.group(1)) if match else None
 
 
 def still_group_key(url: str) -> str:
-    parsed = urllib.parse.urlparse(canonical_url(url))
+    parsed = urllib.parse.urlparse(full_size_url(url))
     path = re.sub(r"-\d{2,5}x\d{2,5}(?=\.(?:jpe?g|png|webp)$)", "", parsed.path, flags=re.I)
     return urllib.parse.urlunparse((parsed.scheme, parsed.netloc, path, "", "", ""))
 
@@ -119,10 +127,15 @@ def extract_image_variants(page_url: str) -> list[ImageVariant]:
 
 
 def choose_full_variant(variants: list[ImageVariant]) -> ImageVariant:
-    originals = [variant for variant in variants if infer_width_from_url(variant.url) is None]
+    originals = [
+        ImageVariant(full_size_url(variant.url), variant.width)
+        for variant in variants
+        if infer_width_from_url(variant.url) is None
+    ]
     if originals:
         return originals[-1]
-    return max(variants, key=lambda variant: variant.width or 0)
+    largest = max(variants, key=lambda variant: variant.width or 0)
+    return ImageVariant(full_size_url(largest.url), largest.width)
 
 
 def choose_analysis_variant(variants: list[ImageVariant], max_edge: int) -> ImageVariant:
@@ -178,13 +191,13 @@ def extension_for(url: str, data: bytes) -> str:
 
 def infer_title(page_url: str) -> str:
     slug = urllib.parse.urlparse(page_url).path.strip("/").split("/")[-1]
-    return slug.replace("-", " ").title() if slug else "filmgrab-study"
+    return slug.replace("-", " ").title() if slug else "Untitled Film"
 
 
 def infer_slug(page_url: str) -> str:
     slug = urllib.parse.urlparse(page_url).path.strip("/").split("/")[-1]
     slug = re.sub(r"[^a-zA-Z0-9]+", "-", slug).strip("-").lower()
-    return slug or "filmgrab-study"
+    return slug or "untitled-film"
 
 
 def is_effectively_empty_dir(path: Path) -> bool:
@@ -197,7 +210,7 @@ def is_effectively_empty_dir(path: Path) -> bool:
 
 
 def default_output_dir(page_url: str) -> Path:
-    base = Path.cwd() / f"filmgrab-{infer_slug(page_url)}"
+    base = Path.cwd() / infer_slug(page_url)
     if not base.exists() or is_effectively_empty_dir(base):
         return base
     for index in range(2, 1000):
@@ -212,7 +225,7 @@ def main() -> int:
     parser.add_argument("url", help="FilmGrab movie page URL")
     parser.add_argument(
         "--output",
-        help="Output directory. Defaults to ./filmgrab-<movie-slug>, with a numeric suffix if needed.",
+        help="Output directory. Defaults to ./<movie-slug>, with a numeric suffix if needed.",
     )
     parser.add_argument("--max-images", type=int, default=30, help="Maximum stills to keep")
     parser.add_argument(

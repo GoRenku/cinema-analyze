@@ -24,8 +24,7 @@ def main() -> int:
     analysis_path = Path(args.analysis_json)
     output = Path(args.output) if args.output else analysis_path.parent / "report"
     output.mkdir(parents=True, exist_ok=True)
-    preview_script = skill_dir / "bin" / "preview-server"
-    stop_script = skill_dir / "bin" / "stop-preview-server"
+    server_script = skill_dir / "bin" / "server"
 
     data = json.loads(analysis_path.read_text(encoding="utf-8"))
     (output / "analysis.json").write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -34,11 +33,11 @@ def main() -> int:
     print(f"Wrote {output / 'index.html'}")
     print(f"Wrote {output / 'analysis.json'}")
     print("Stable preview server:")
-    print(f"  {preview_script}")
+    print(f"  {server_script} start")
     print("Preview URL:")
     print(f"  http://127.0.0.1:{PREVIEW_PORT}/?dir={urllib.parse.quote(str(analysis_path.parent.resolve()))}")
     print("Shutdown:")
-    print(f"  {stop_script}")
+    print(f"  {server_script} stop")
     return 0
 
 

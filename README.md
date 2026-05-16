@@ -1,6 +1,6 @@
-# Cinema Analyze
+# Renku Cinema Analyze
 
-Cinema Analyze is an agent skill/plugin for turning a FilmGrab movie page into a cinematographer-focused visual-language study.
+Renku Cinema Analyze is an agent skill/plugin for turning a FilmGrab movie page into a cinematographer-focused visual-language study.
 
 It downloads a capped set of FilmGrab stills, uses FilmGrab's own smaller image variants for vision analysis, guides the agent through a structured visual reading, validates cited stills against the downloaded manifest, and renders a browser report with switchable visual styles.
 
@@ -22,7 +22,7 @@ This plugin is not listed in Codex's default curated Plugin Directory. OpenAI ha
 For now, add this GitHub repository as a Codex plugin marketplace:
 
 ```bash
-codex plugin marketplace add keremk/cinema-analyze --ref main
+codex plugin marketplace add GoRenku/cinema-analyze --ref main
 ```
 
 Then install the plugin from that added marketplace:
@@ -31,14 +31,14 @@ Then install the plugin from that added marketplace:
 2. Open the plugin directory.
    - In the Codex CLI, type `/plugins`.
    - In the Codex app, open Plugins.
-3. Choose the `Cinema Analyze Plugins` marketplace. It appears only after you add the marketplace above.
+3. Choose the `Renku Cinema Analyze Plugins` marketplace. It appears only after you add the marketplace above.
 4. Install `cinema-analyze`.
 5. Start a new Codex thread.
 
-In Codex, `cinema-analyze` is the plugin package. The callable skill is named `film-grab-visual-language`, so you invoke it with:
+In Codex, `cinema-analyze` is the plugin package. The callable skill is named `renku-cinema-analyze`, so you invoke it with:
 
 ```text
-$film-grab-visual-language
+$renku-cinema-analyze
 ```
 
 ### If You Use Claude Code
@@ -46,7 +46,7 @@ $film-grab-visual-language
 Add this GitHub repository as a Claude Code plugin marketplace from inside Claude Code:
 
 ```text
-/plugin marketplace add keremk/cinema-analyze
+/plugin marketplace add GoRenku/cinema-analyze
 ```
 
 Then install the plugin from that marketplace:
@@ -57,10 +57,10 @@ Then install the plugin from that marketplace:
 
 Run `/reload-plugins` after installation, or restart Claude Code if Claude Code asks you to reload plugins.
 
-Then ask Claude Code to use the FilmGrab visual-language skill with a FilmGrab movie URL. Claude Code plugin usage is prompt-driven, so you can say:
+Then ask Claude Code to use the Renku Cinema Analyze skill with a FilmGrab movie URL. Claude Code plugin usage is prompt-driven, so you can say:
 
 ```text
-Use the FilmGrab visual-language skill to analyze this FilmGrab movie page:
+Use the Renku Cinema Analyze skill to analyze this FilmGrab movie page:
 https://film-grab.com/2021/05/07/promising-young-woman/
 ```
 
@@ -73,7 +73,7 @@ These steps are the same whether you installed the plugin in Codex or Claude Cod
 Create one folder where all generated movie studies will go:
 
 ```bash
-mkdir -p ~/filmgrab-analyses
+mkdir -p ~/cinema-analyses
 ```
 
 Open that folder as the workspace folder in Codex or Claude Code when you are creating analyses.
@@ -81,10 +81,10 @@ Open that folder as the workspace folder in Codex or Claude Code when you are cr
 This matters because each movie gets its own generated folder inside the current workspace, for example:
 
 ```text
-~/filmgrab-analyses/
-  filmgrab-promising-young-woman/
-  filmgrab-the-substance/
-  filmgrab-in-the-mood-for-love/
+~/cinema-analyses/
+  promising-young-woman/
+  the-substance/
+  in-the-mood-for-love/
 ```
 
 Keeping all studies in one base folder makes the report viewer's movie picker useful: it lists sibling folders that contain `analysis.json`.
@@ -96,14 +96,14 @@ Use a direct [FilmGrab](https://film-grab.com/) movie URL:
 For Codex:
 
 ```text
-$film-grab-visual-language analyze this FilmGrab movie page:
+$renku-cinema-analyze analyze this FilmGrab movie page:
 https://film-grab.com/2021/05/07/promising-young-woman/
 ```
 
 For Claude Code:
 
 ```text
-Use the FilmGrab visual-language skill to analyze this FilmGrab movie page:
+Use the Renku Cinema Analyze skill to analyze this FilmGrab movie page:
 https://film-grab.com/2021/05/07/promising-young-woman/
 ```
 
@@ -113,18 +113,24 @@ The skill intentionally uses a direct FilmGrab page link instead of automaticall
 
 The skill renders a static report into each movie folder. Ask the agent to open or preview the generated report, and it will use the shared local preview server on one stable port: `127.0.0.1:8765`.
 
+For manual control, the deterministic server script is:
+
+```bash
+skills/renku-cinema-analyze/bin/server start
+```
+
 Then open a generated movie folder through the `dir` query parameter:
 
 ```text
-http://127.0.0.1:8765/?dir=/Users/you/filmgrab-analyses/filmgrab-promising-young-woman
+http://127.0.0.1:8765/?dir=/Users/you/cinema-analyses/promising-young-woman
 ```
 
 You can also choose a style with the `style` query parameter:
 
 ```text
-http://127.0.0.1:8765/?dir=/Users/you/filmgrab-analyses/filmgrab-promising-young-woman&style=cinema
-http://127.0.0.1:8765/?dir=/Users/you/filmgrab-analyses/filmgrab-promising-young-woman&style=gallery
-http://127.0.0.1:8765/?dir=/Users/you/filmgrab-analyses/filmgrab-promising-young-woman&style=dossier
+http://127.0.0.1:8765/?dir=/Users/you/cinema-analyses/promising-young-woman&style=cinema
+http://127.0.0.1:8765/?dir=/Users/you/cinema-analyses/promising-young-woman&style=gallery
+http://127.0.0.1:8765/?dir=/Users/you/cinema-analyses/promising-young-woman&style=dossier
 ```
 
 ### 4. Stop The Preview Server
@@ -132,7 +138,13 @@ http://127.0.0.1:8765/?dir=/Users/you/filmgrab-analyses/filmgrab-promising-young
 When you are finished looking at reports, ask the agent to stop the shared preview server:
 
 ```text
-Stop the FilmGrab preview server.
+Stop the Renku Cinema Analyze preview server.
+```
+
+For manual control:
+
+```bash
+skills/renku-cinema-analyze/bin/server stop
 ```
 
 This prevents a leftover local server from continuing to run in the background.
@@ -154,7 +166,7 @@ The generated movie folders are scratch output. They are intentionally ignored b
 The main skill lives at:
 
 ```text
-skills/film-grab-visual-language/SKILL.md
+skills/renku-cinema-analyze/SKILL.md
 ```
 
 It covers:
@@ -188,16 +200,18 @@ http://127.0.0.1:8765/?dir=/path/to/report&style=dossier
 
 The top bar also includes a style switcher.
 
-## Advanced Shell Scripts
+## Preview Server Script
 
-Most users should let Codex or Claude Code run the workflow. If you want to manage the preview server yourself, the skill includes small shell wrappers:
+Most users should let Codex or Claude Code run the workflow. If you want to manage the preview server yourself, use the smart lifecycle script:
 
 ```bash
-skills/film-grab-visual-language/bin/preview-server
-skills/film-grab-visual-language/bin/stop-preview-server
+skills/renku-cinema-analyze/bin/server start
+skills/renku-cinema-analyze/bin/server status
+skills/renku-cinema-analyze/bin/server restart
+skills/renku-cinema-analyze/bin/server stop
 ```
 
-The preview server still uses the same stable local address: `http://127.0.0.1:8765/`.
+The script checks whether the server is already healthy, removes stale PID state, and refuses to start if another process owns the port. The preview server uses the stable local address: `http://127.0.0.1:8765/`.
 
 ## Thanks And Attribution
 
@@ -224,10 +238,10 @@ The Claude Code plugin files are:
 The skill itself is:
 
 ```text
-skills/film-grab-visual-language/SKILL.md
+skills/renku-cinema-analyze/SKILL.md
 ```
 
-Codex uses the skill name from `SKILL.md`, which is why the Codex invocation is `$film-grab-visual-language`. Claude Code plugin skills are installed from the `cinema-analyze` marketplace and then used through normal prompting.
+Codex uses the skill name from `SKILL.md`, which is why the Codex invocation is `$renku-cinema-analyze`. Claude Code plugin skills are installed from the `cinema-analyze` marketplace and then used through normal prompting.
 
 ## Public Codex Plugin Directory
 
@@ -236,10 +250,10 @@ This plugin does not appear in Codex's default curated Plugin Directory unless O
 As of the current Codex plugin documentation, OpenAI says official public plugin publishing and self-serve plugin management are coming soon. Until that exists, distribution works through explicit marketplace installation:
 
 ```bash
-codex plugin marketplace add keremk/cinema-analyze --ref main
+codex plugin marketplace add GoRenku/cinema-analyze --ref main
 ```
 
-After the marketplace is added, Codex can show `Cinema Analyze Plugins` as a selectable marketplace source, and users can install `cinema-analyze` from there.
+After the marketplace is added, Codex can show `Renku Cinema Analyze Plugins` as a selectable marketplace source, and users can install `cinema-analyze` from there.
 
 ## Local Plugin Development
 
@@ -248,7 +262,7 @@ If you are editing the plugin locally, cloning the repo is only a development st
 Clone the source code:
 
 ```bash
-git clone https://github.com/keremk/cinema-analyze.git
+git clone https://github.com/GoRenku/cinema-analyze.git
 ```
 
 Then add that local folder as a marketplace root:
@@ -257,7 +271,7 @@ Then add that local folder as a marketplace root:
 codex plugin marketplace add /absolute/path/to/cinema-analyze
 ```
 
-After adding the marketplace, restart Codex, open the plugin directory, choose `Cinema Analyze Plugins`, and install `cinema-analyze`.
+After adding the marketplace, restart Codex, open the plugin directory, choose `Renku Cinema Analyze Plugins`, and install `cinema-analyze`.
 
 The marketplace files tell Codex and Claude Code where the plugin lives. The plugin manifests tell the agent that the plugin contains skills under:
 
@@ -275,11 +289,12 @@ The marketplace files tell Codex and Claude Code where the plugin lives. The plu
 │   ├── marketplace.json
 │   └── plugin.json
 ├── skills/
-│   └── film-grab-visual-language/
+│   └── renku-cinema-analyze/
 │       ├── SKILL.md
 │       ├── assets/
 │       │   └── viewer.html
 │       ├── bin/
+│       │   ├── server
 │       │   ├── preview-server
 │       │   └── stop-preview-server
 │       └── scripts/
@@ -289,7 +304,7 @@ The marketplace files tell Codex and Claude Code where the plugin lives. The plu
 
 ## Notes
 
-- FilmGrab output folders are temporary and ignored by Git via `filmgrab-*/`.
+- Generated movie folders are temporary scratch output. Keep them in your base analysis folder rather than in this plugin repository.
 - The preview server uses one well-known local port: `127.0.0.1:8765`.
 - The movie picker in the report lists sibling folders that contain `analysis.json`.
 - The skill avoids inventing credits. If director, cinematographer, or year cannot be found, the report should use `null`.

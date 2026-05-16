@@ -1,7 +1,7 @@
 {
-  "name": "cinema-analyze-marketplace",
+  "name": "cinema-analyze",
   "interface": {
-    "displayName": "Cinema Analyze Plugins"
+    "displayName": "Renku Cinema Analyze Plugins"
   },
   "plugins": [
     {

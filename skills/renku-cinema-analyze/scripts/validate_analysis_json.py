@@ -42,6 +42,10 @@ def collect_still_refs(value) -> list[str]:
     return refs
 
 
+def is_thumb_url(url: str) -> bool:
+    return "/wp-content/uploads/photo-gallery/thumb/" in url
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("analysis_json")
@@ -63,7 +67,19 @@ def main() -> int:
         errors.append("film.filmGrabUrl should match manifest.filmGrabUrl")
 
     source_urls = {item.get("fullUrl") for item in manifest.get("stills", []) if isinstance(item, dict)}
+    thumb_source_urls = sorted(url for url in source_urls if isinstance(url, str) and is_thumb_url(url))
+    if thumb_source_urls:
+        errors.append(
+            "Manifest fullUrl values must use full-size FilmGrab URLs, not /thumb/ URLs: "
+            + ", ".join(thumb_source_urls[:10])
+        )
     cited = collect_still_refs(analysis)
+    thumb_cited = sorted({url for url in cited if is_thumb_url(url)})
+    if thumb_cited:
+        errors.append(
+            "Cited still URLs must use full-size FilmGrab URLs, not /thumb/ URLs: "
+            + ", ".join(thumb_cited[:10])
+        )
     missing = sorted({url for url in cited if url not in source_urls})
     if missing:
         errors.append("Cited still URLs not found in manifest: " + ", ".join(missing[:10]))

@@ -1,0 +1,180 @@
+#!/usr/bin/env sh
+set -eu
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+SKILL_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+SERVER_PY="$SKILL_DIR/scripts/preview_report_server.py"
+PYTHON_BIN="${PYTHON:-python3}"
+HOST="${RENKU_CINEMA_ANALYZE_HOST:-127.0.0.1}"
+PORT="${RENKU_CINEMA_ANALYZE_PORT:-8765}"
+URL="http://$HOST:$PORT"
+PID_FILE="${TMPDIR:-/tmp}/renku-cinema-analyze-preview.pid"
+LOG_FILE="${TMPDIR:-/tmp}/renku-cinema-analyze-preview.log"
+COMMAND="${1:-start}"
+
+if [ "$#" -gt 0 ]; then
+  shift
+fi
+
+health() {
+  command -v curl >/dev/null 2>&1 && curl -fsS --max-time 1 "$URL/health" >/dev/null 2>&1
+}
+
+read_pid() {
+  [ -f "$PID_FILE" ] && sed -n '1p' "$PID_FILE" 2>/dev/null || true
+}
+
+pid_is_running() {
+  pid="$1"
+  [ -n "$pid" ] && kill -0 "$pid" >/dev/null 2>&1
+}
+
+port_pid() {
+  command -v lsof >/dev/null 2>&1 && lsof -nP -iTCP:"$PORT" -sTCP:LISTEN -t 2>/dev/null | sed -n '1p' || true
+}
+
+pid_looks_like_ours() {
+  pid="$1"
+  [ -n "$pid" ] || return 1
+  command -v ps >/dev/null 2>&1 || return 1
+  ps -p "$pid" -o command= 2>/dev/null | grep 'preview_report_server.py' >/dev/null 2>&1
+}
+
+stop_pid() {
+  pid="$1"
+  [ -n "$pid" ] || return 0
+  kill "$pid" >/dev/null 2>&1 || true
+  count=0
+  while pid_is_running "$pid" && [ "$count" -lt 25 ]; do
+    sleep 0.2
+    count=$((count + 1))
+  done
+  if pid_is_running "$pid"; then
+    kill -TERM "$pid" >/dev/null 2>&1 || true
+  fi
+}
+
+wait_for_health() {
+  count=0
+  while [ "$count" -lt 40 ]; do
+    if health; then
+      return 0
+    fi
+    sleep 0.25
+    count=$((count + 1))
+  done
+  return 1
+}
+
+status() {
+  if health; then
+    pid="$(read_pid)"
+    if [ -n "$pid" ]; then
+      echo "Renku Cinema Analyze preview server is running on $URL (pid $pid)."
+    else
+      echo "Renku Cinema Analyze preview server is running on $URL."
+    fi
+    echo "Use: $URL/?dir=/absolute/path/to/movie-folder"
+    return 0
+  fi
+
+  pid="$(read_pid)"
+  if pid_is_running "$pid"; then
+    echo "Renku Cinema Analyze preview server pid $pid exists, but health check failed."
+    return 1
+  fi
+
+  echo "Renku Cinema Analyze preview server is not running."
+  return 1
+}
+
+start() {
+  if health; then
+    status
+    return 0
+  fi
+
+  pid="$(read_pid)"
+  if pid_is_running "$pid"; then
+    echo "Removing stale unhealthy preview server pid $pid."
+    stop_pid "$pid"
+    rm -f "$PID_FILE"
+  fi
+
+  occupied_pid="$(port_pid)"
+  if [ -n "$occupied_pid" ]; then
+    if pid_looks_like_ours "$occupied_pid"; then
+      echo "Stopping stale preview server process on port $PORT (pid $occupied_pid)."
+      stop_pid "$occupied_pid"
+      rm -f "$PID_FILE"
+    else
+      echo "Port $PORT is occupied by pid $occupied_pid, but the preview health check failed."
+      echo "Stop that process or run: $0 restart"
+      return 1
+    fi
+  fi
+
+  occupied_pid="$(port_pid)"
+  if [ -n "$occupied_pid" ]; then
+    echo "Port $PORT is occupied by pid $occupied_pid, but the preview health check failed."
+    echo "Stop that process or run: $0 restart"
+    return 1
+  fi
+
+  nohup "$PYTHON_BIN" "$SERVER_PY" --host "$HOST" --port "$PORT" "$@" >"$LOG_FILE" 2>&1 &
+
+  if wait_for_health; then
+    status
+    return 0
+  fi
+
+  echo "Preview server did not become healthy. Log:"
+  echo "$LOG_FILE"
+  tail -n 20 "$LOG_FILE" 2>/dev/null || true
+  return 1
+}
+
+stop() {
+  if health; then
+    "$PYTHON_BIN" "$SERVER_PY" --host "$HOST" --port "$PORT" --stop >/dev/null 2>&1 || true
+  fi
+
+  pid="$(read_pid)"
+  if pid_is_running "$pid"; then
+    stop_pid "$pid"
+  fi
+
+  occupied_pid="$(port_pid)"
+  if [ -n "$occupied_pid" ] && { [ "$occupied_pid" = "$pid" ] || pid_looks_like_ours "$occupied_pid"; }; then
+    stop_pid "$occupied_pid"
+  fi
+
+  rm -f "$PID_FILE"
+
+  if health; then
+    echo "Renku Cinema Analyze preview server is still responding on $URL."
+    return 1
+  fi
+
+  echo "Renku Cinema Analyze preview server is stopped."
+}
+
+case "$COMMAND" in
+  start|"")
+    start "$@"
+    ;;
+  stop)
+    stop
+    ;;
+  restart)
+    stop || true
+    start "$@"
+    ;;
+  status)
+    status
+    ;;
+  *)
+    echo "Usage: $0 [start|stop|restart|status]"
+    exit 2
+    ;;
+esac

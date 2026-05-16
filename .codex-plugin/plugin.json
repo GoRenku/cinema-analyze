@@ -1,7 +1,7 @@
 {
   "name": "cinema-analyze",
   "version": "1.0.0",
-  "description": "FilmGrab visual-language analysis tools for cinematographers.",
+  "description": "Renku cinema analysis tools for cinematographers.",
   "author": {
     "name": "Kerem Karatal"
   },
@@ -10,13 +10,13 @@
     "cinematography",
     "film-analysis",
     "filmgrab",
-    "visual-language"
+    "cinema-analyze"
   ],
   "skills": "./skills/",
   "interface": {
-    "displayName": "Cinema Analyze",
+    "displayName": "Renku Cinema Analyze",
     "shortDescription": "Analyze FilmGrab stills into visual language studies.",
-    "longDescription": "Cinema Analyze extracts stills from FilmGrab movie pages, prepares smaller FilmGrab image variants for AI vision analysis, validates structured visual-language JSON, and renders reusable browser reports for cinematographers.",
+    "longDescription": "Renku Cinema Analyze extracts stills from FilmGrab movie pages, prepares smaller FilmGrab image variants for AI vision analysis, validates structured visual-language JSON, and renders reusable browser reports for cinematographers.",
     "developerName": "Kerem Karatal",
     "category": "Video / Media",
     "capabilities": [
@@ -25,7 +25,7 @@
     ],
     "brandColor": "#C9A961",
     "defaultPrompt": [
-      "Use FilmGrab Visual Language to analyze this movie page into a cinematographer-focused visual study.",
+      "Use Renku Cinema Analyze to analyze this movie page into a cinematographer-focused visual study.",
       "Extract stills from this FilmGrab URL, analyze the visual language, and render the HTML report."
     ]
   }

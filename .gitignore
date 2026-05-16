@@ -27,8 +27,8 @@ venv/
 playwright-report/
 test-results/
 
-# Temporary FilmGrab analysis output from local/manual runs.
-# These folders are scratch artifacts and should not live in this repo.
+# Legacy temporary FilmGrab analysis output from old local/manual runs.
+# New generated movie folders use plain movie slugs and should live outside this repo.
 filmgrab-*/
 
 # Temporary local experiments

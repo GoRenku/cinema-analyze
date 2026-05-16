@@ -200,9 +200,26 @@
   .hero-grid .still { width: 100%; height: 100%; min-width: 0; min-height: 0; aspect-ratio: auto; }
   .hero-grid .still:first-child { grid-column: 1 / -1; grid-row: 1; }
   section.block { padding: var(--section-gap) 0; border-bottom: 1px solid var(--border); }
-  .section-header { display: grid; grid-template-columns: minmax(190px, 0.7fr) minmax(0, 2.3fr); gap: 42px; margin-bottom: 28px; }
+  .section-header {
+    display: grid;
+    grid-template-columns: minmax(360px, 0.95fr) minmax(0, 1.65fr);
+    gap: clamp(32px, 5vw, 72px);
+    align-items: start;
+    margin-bottom: 28px;
+  }
+  .section-heading { min-width: 0; }
   .section-number { font-family: var(--mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.15em; text-transform: uppercase; }
-  .section-title { font-family: var(--title-font); font-weight: 760; font-size: clamp(32px, 4vw, 56px); letter-spacing: -0.035em; line-height: 0.98; margin: 8px 0 0; }
+  .section-title {
+    font-family: var(--title-font);
+    font-weight: 760;
+    font-size: clamp(34px, 4vw, 54px);
+    letter-spacing: -0.025em;
+    line-height: 1;
+    margin: 8px 0 0;
+    max-width: 100%;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
   .section-lede { max-width: 850px; font-size: 18px; line-height: 1.7; color: var(--text); }
   .section-lede p { margin: 0 0 14px; }
   .still { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; cursor: zoom-in; aspect-ratio: 16 / 9; position: relative; transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; box-shadow: 0 18px 50px var(--shadow); }
@@ -246,7 +263,21 @@
   .principles li::before { content: counter(principle, decimal-leading-zero); position: absolute; left: 18px; top: 17px; font-family: var(--mono); font-size: 12px; color: var(--accent); }
   .empty, .error { text-align: center; padding: 120px 24px; color: var(--text-dim); }
   .empty h2, .error h2 { font-size: 42px; margin: 0 0 12px; color: var(--text); }
-  footer { max-width: 1200px; margin: 0 auto; padding: 40px 28px 60px; color: var(--text-faint); font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; text-align: center; border-top: 1px solid var(--border); }
+  footer {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 28px 60px;
+    color: var(--text-faint);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: center;
+    border-top: 1px solid var(--border);
+  }
+  .footer-note { margin: 0 0 8px; }
+  .footer-note:last-child { margin-bottom: 0; }
+  .footer-attribution a { color: var(--accent); }
   .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.92); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 32px; cursor: zoom-out; }
   .lightbox.open { display: flex; }
   .lightbox img { max-width: 100%; max-height: 100%; box-shadow: 0 30px 80px rgba(0,0,0,0.7); }
@@ -377,11 +408,16 @@
     letter-spacing: -0.03em;
   }
   html[data-style="dossier"] .section-header {
-    grid-template-columns: minmax(150px, 0.55fr) minmax(0, 2fr);
-    gap: 30px;
+    grid-template-columns: minmax(260px, 0.8fr) minmax(0, 2fr);
+    gap: clamp(32px, 4.5vw, 58px);
     margin-bottom: 24px;
   }
-  html[data-style="dossier"] .section-title { font-size: clamp(28px, 3.4vw, 42px); }
+  html[data-style="dossier"] .section-title {
+    font-size: clamp(30px, 3.2vw, 42px);
+    line-height: 1.02;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
   html[data-style="dossier"] .still-row { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
   html[data-style="dossier"] .still-row.compact { grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); }
   html[data-style="dossier"] .pattern,
@@ -420,6 +456,19 @@
     .page { padding-inline: 18px; }
     .observation, .constitution { padding: 22px; }
   }
+  @media (min-width: 821px) and (max-width: 1040px) {
+    .section-header {
+      grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.5fr);
+      gap: 32px;
+    }
+    html[data-style="dossier"] .section-header {
+      grid-template-columns: minmax(230px, 0.75fr) minmax(0, 2fr);
+      gap: 30px;
+    }
+    html[data-style="dossier"] .section-title { font-size: clamp(28px, 3vw, 34px); }
+    .section-title { font-size: clamp(32px, 3.8vw, 44px); }
+    .section-lede { font-size: 17px; line-height: 1.65; }
+  }
 </style>
 </head>
 <body>
@@ -443,7 +492,10 @@
   </div>
 </div>
 <main id="page" class="page"></main>
-<footer>Rendered from analysis.json</footer>
+<footer id="footer">
+  <p class="footer-note footer-attribution">Still images sourced from <a id="footerSourceLink" href="https://film-grab.com/" target="_blank" rel="noopener">film-grab.com</a>.</p>
+  <p class="footer-note">Rendered from analysis.json</p>
+</footer>
 <div class="modal-layer" id="libraryModal" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="libraryTitle">
     <div class="modal-header">
@@ -568,6 +620,7 @@ function renderHero(data) {
   const stills = data.coreVisualLanguage?.exampleStills?.slice(0, 3) || [];
   $("sourceLink").href = f.filmGrabUrl || "#";
   $("sourceLink").hidden = !f.filmGrabUrl;
+  $("footerSourceLink").href = f.filmGrabUrl || "https://film-grab.com/";
   return `<header class="hero">
     <div class="hero-text">
       <div class="eyebrow">Visual Language Study</div>
@@ -642,7 +695,7 @@ async function loadData() {
     if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
     render(await response.json());
   } catch (error) {
-    page.innerHTML = `<div class="error"><h2>Could not load analysis.json.</h2><p>${escapeHtml(error.message)}</p><p>Open the report through the FilmGrab preview server on <code>127.0.0.1:8765</code>.</p></div>`;
+    page.innerHTML = `<div class="error"><h2>Could not load analysis.json.</h2><p>${escapeHtml(error.message)}</p><p>Open the report through the Renku Cinema Analyze preview server on <code>127.0.0.1:8765</code>.</p></div>`;
   }
 }
 renderStyleSwitcher();

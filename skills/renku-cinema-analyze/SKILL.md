@@ -1,9 +1,9 @@
 ---
-name: film-grab-visual-language
+name: renku-cinema-analyze
 description: Analyze a film-grab.com movie page into a cinematographer-focused visual language study. Use when a user gives a FilmGrab film URL and wants still extraction, capped full-size and smaller analysis image downloads, structured JSON analysis, or a browser-ready HTML/JavaScript report about a film's color, grading, composition, lighting, texture, and visual principles.
 ---
 
-# FilmGrab Visual Language
+# Renku Cinema Analyze
 
 In commands below, `<skill>` is the absolute path to this skill's folder.
 
@@ -48,10 +48,10 @@ python3 <skill>/scripts/validate_analysis_json.py "<work-dir>/analysis.json" --m
 python3 <skill>/scripts/render_report.py "<work-dir>/analysis.json"
 ```
 
-Preview reports through the shared FilmGrab preview server on the well-known local port `8765`. Start it once:
+Preview reports through the shared Renku Cinema Analyze preview server on the well-known local port `8765`. Start it once:
 
 ```bash
-<skill>/bin/preview-server
+<skill>/bin/server start
 ```
 
 Then open the report by passing the analysis folder in the URL:
@@ -63,7 +63,7 @@ http://127.0.0.1:8765/?dir=<absolute-work-dir>
 For example:
 
 ```text
-http://127.0.0.1:8765/?dir=/Users/example/project/filmgrab-movie-title
+http://127.0.0.1:8765/?dir=/Users/example/project/movie-title
 ```
 
 The renderer prints the exact preview URL after rendering.
@@ -73,7 +73,7 @@ The shared preview also exposes a movie picker for sibling analysis folders. Any
 Shut the shared preview server down when it is no longer needed:
 
 ```bash
-<skill>/bin/stop-preview-server
+<skill>/bin/server stop
 ```
 
 6. Sanity-check the rendered report. Confirm that the page loads the film title, expected sections, stills, and no obvious loading error. If browser access to localhost is blocked, use `curl "http://127.0.0.1:8765/analysis.json?dir=<absolute-work-dir>"` to confirm the preview server is serving the rendered JSON, then report the browser limitation clearly.
@@ -81,10 +81,10 @@ Shut the shared preview server down when it is no longer needed:
 ## Common Hiccups
 
 - The still extractor can occasionally capture non-film page assets such as site icons, logos, ads, or tiny thumbnails. Exclude those from `sourceStills`, hero stills, observations, and all cited examples. Keep them in `manifest.json` if the script produced them, but do not analyze them as film frames.
-- If the manifest mixes `thumb/` URLs and full gallery URLs, still cite only URLs that appear in the manifest. Do not manually "upgrade" a thumbnail URL unless the manifest contains the upgraded URL.
+- `fullUrl` values and all cited FilmGrab still URLs must point to the full-size image, never the `/photo-gallery/thumb/` URL. The prepare script canonicalizes thumbnail URLs by removing `/thumb/`; if any thumb URL remains in `analysis.json`, fix it before validation.
 - Network downloads may require approval in sandboxed environments. If fetching FilmGrab fails with DNS, host resolution, or connection errors, retry the same prepare command with the needed network permission instead of changing the workflow. The prepare script should not create the default output folder until after FilmGrab image URLs have been fetched successfully; if an older failed run left an empty default folder behind, the script should reuse it rather than creating a `-2` suffix.
 - Use the shared preview server on `127.0.0.1:8765`; do not create a new per-report static server on a random port. Pass the analysis folder through the `dir` query parameter instead.
-- If the preview server is already running, reuse it. If it needs to be stopped, run `<skill>/bin/stop-preview-server`.
+- If the preview server is already running, reuse it. Use `<skill>/bin/server status` to check it, `<skill>/bin/server start` to start it, `<skill>/bin/server stop` to stop it, and `<skill>/bin/server restart` if the port state looks stale.
 - Browser preview is useful but not the source of truth. Validation against `manifest.json` and successful rendering of `report/index.html` plus `report/analysis.json` are required even if browser preview fails.
 
 ## Analysis Rules
@@ -203,5 +203,6 @@ When filling `inspiredBy`:
 - `scripts/validate_analysis_json.py`: validate schema basics and verify cited still URLs come from the manifest.
 - `scripts/render_report.py`: create a report folder from the stable viewer template and `analysis.json`.
 - `scripts/preview_report_server.py`: serve the reusable viewer on `127.0.0.1:8765`, load any report with `?dir=<work-dir>`, and stop the server with `--stop`.
-- `bin/preview-server` and `bin/stop-preview-server`: friendly wrappers for starting and stopping the shared preview server.
+- `bin/server`: smart lifecycle wrapper for the shared preview server. It supports `start`, `stop`, `restart`, and `status`.
+- `bin/preview-server` and `bin/stop-preview-server`: compatibility wrappers around `bin/server`.
 - `assets/viewer.html`: reusable browser renderer. It reads `analysis.json`; do not generate new HTML for every movie.
