@@ -8,14 +8,10 @@ It downloads a capped set of FilmGrab stills, uses FilmGrab's own smaller image 
 
 ## Quick Start
 
-There are two clear paths:
-
 1. Install the plugin for the agent you use: Codex or Claude Code.
 2. After it is installed, create a base analysis folder, invoke the skill with a FilmGrab URL, preview the report, and ask the agent to stop the preview server when you are done.
 
 ## Install
-
-Choose one install path.
 
 ### If You Use Codex
 
@@ -192,7 +188,6 @@ Given a FilmGrab URL, the skill creates a temporary movie analysis folder contai
 
 - `manifest.json` with the downloaded still metadata
 - `analysis.json` with the structured visual-language study
-- `full/` with full-size downloaded stills
 - `analysis/` with smaller FilmGrab-provided still variants for model analysis
 - `report/` with a static rendered copy of the report
 
@@ -217,13 +212,6 @@ It covers:
 - a shared local preview server
 - a sibling-movie analysis picker
 - style variants for the report viewer
-
-## Requirements
-
-- Network access when downloading FilmGrab pages and stills
-- An agent environment that supports local skills/plugins, such as Codex or Claude Code
-
-There are no package dependencies to install.
 
 ## Report Styles
 
